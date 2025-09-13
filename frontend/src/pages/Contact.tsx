@@ -19,9 +19,7 @@ const Contact = () => {
     message: ""
   });
   
-  const [newsletterEmail, setNewsletterEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubscribing, setIsSubscribing] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -45,19 +43,6 @@ const Contact = () => {
     }, 1000);
   };
 
-  const handleNewsletterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubscribing(true);
-    
-    // TODO: Implement newsletter subscription
-    console.log("Newsletter subscription:", newsletterEmail);
-    
-    setTimeout(() => {
-      setIsSubscribing(false);
-      setNewsletterEmail("");
-    }, 1000);
-  };
-
   const socialLinks = [
     { icon: Github, label: "GitHub", url: "https://github.com/saint-org", color: "text-gray-700 hover:text-gray-900" },
     { icon: Linkedin, label: "LinkedIn", url: "https://linkedin.com/company/saint", color: "text-blue-600 hover:text-blue-700" },
@@ -70,46 +55,46 @@ const Contact = () => {
     {
       icon: Mail,
       label: "Email",
-      value: "contact@saint.university.edu",
+      value: "sohamsk93@gmail.com",
       description: "General inquiries and information"
     },
     {
       icon: Phone,
       label: "Phone",
-      value: "+1 (555) 123-4567",
+      value: "+91 8275xxxxxx",
       description: "Office hours: Mon-Fri 9AM-5PM"
     },
     {
       icon: MapPin,
       label: "Location",
-      value: "Computer Science Building, Room 201",
-      description: "University Campus, Tech District"
+      value: "IT Department",
+      description: "JSPM's RSCOE"
     },
     {
       icon: Clock,
       label: "Office Hours",
       value: "Mon-Fri: 9:00 AM - 5:00 PM",
-      description: "Available for student consultations"
+      description: "relationship advices available"
     }
   ];
 
   const team = [
     {
-      name: "Dr. Sarah Mitchell",
+      name: "Dr. Soham Kulkarni",
       role: "Faculty Advisor",
-      email: "s.mitchell@university.edu",
+      email: "sohamsk93@gmail.com",
       office: "CS Building, Room 301"
     },
     {
-      name: "Alex Chen",
+      name: "Siddhi Pokale",
       role: "President",
-      email: "president@saint.university.edu",
-      office: "Student Union, Room 150"
+      email: "presidentsaint@gmail.com",
+      office: "HoD Cabin"
     },
     {
-      name: "Sarah Johnson",
+      name: "Shruti Lad",
       role: "Vice President",
-      email: "vp@saint.university.edu",
+      email: "shrutilad@gmail.com",
       office: "Student Union, Room 150"
     }
   ];
@@ -287,104 +272,76 @@ const Contact = () => {
           </div>
           
           <Card className="overflow-hidden hover-shadow smooth-transition bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-            <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-              <div className="text-center">
-                <MapPin className="h-16 w-16 text-blue-500 mx-auto mb-4" />
-                <p className="text-gray-700 font-medium mb-2">Interactive Map Coming Soon</p>
-                <p className="text-sm text-gray-600">Computer Science Building, Room 201</p>
-                <p className="text-sm text-gray-600">University Campus, Tech District</p>
+            <CardHeader>
+              <CardTitle className="text-2xl font-heading font-bold text-slate-800 flex items-center justify-center gap-2">
+                <MapPin className="w-6 h-6 text-blue-600" />
+                JSPM Rajarshi Shahu College of Engineering
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="rounded-lg overflow-hidden">
+                <iframe 
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3780.9772681431627!2d73.74462247523925!3d18.620092182492805!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bc2bbbc138acb7b%3A0x67043867a211a31d!2sJSPM%20Rajarshi%20Shahu%20College%20Of%20Engineering%20%2C%20Tathawade!5e0!3m2!1sen!2sin!4v1757790123971!5m2!1sen!2sin"
+                  width="100%" 
+                  height="450" 
+                  style={{border: 0}} 
+                  allowFullScreen={true}
+                  loading="lazy" 
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
               </div>
-            </div>
+              <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50">
+                <div className="flex items-start space-x-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
+                    <MapPin className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-1">Campus Location</h3>
+                    <p className="text-gray-700 font-medium">JSPM Rajarshi Shahu College of Engineering</p>
+                    <p className="text-gray-600">Tathawade, Pune, Maharashtra</p>
+                    <p className="text-sm text-gray-500 mt-2">Computer Science Department - IT Building</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
           </Card>
         </div>
       </section>
 
-      {/* Social Links & Newsletter */}
-      <section className="py-16 px-4 relative z-10">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid lg:grid-cols-2 gap-12">
-            {/* Social Media */}
-            <FloatingElement>
-              <div className="text-center lg:text-left">
-                <h3 className="text-3xl font-heading font-bold text-gray-900 mb-6">Follow Us</h3>
-                <p className="text-gray-600 mb-8">Stay connected with our community on social media</p>
-                
-                <div className="flex justify-center lg:justify-start space-x-4">
-                  {socialLinks.map((social, index) => (
-                    <Button
-                      key={index}
-                      variant="ghost"
-                      size="lg"
-                      className={`p-4 rounded-xl hover-shadow smooth-transition ${social.color}`}
-                      onClick={() => window.open(social.url, '_blank')}
-                    >
-                      <social.icon className="h-6 w-6" />
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </FloatingElement>
-
-            {/* Newsletter Signup */}
-            <FloatingElement delay={200}>
-              <Card className="hover-shadow smooth-transition bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-                <CardContent className="p-8">
-                  <h3 className="text-2xl font-heading font-bold text-gray-900 mb-4">Stay Updated</h3>
-                  <p className="text-gray-600 mb-6">Subscribe to our newsletter for the latest events, workshops, and tech news.</p>
-                  
-                  <form onSubmit={handleNewsletterSubmit} className="space-y-4">
-                    <div className="flex gap-3">
-                      <Input
-                        type="email"
-                        placeholder="Enter your email"
-                        value={newsletterEmail}
-                        onChange={(e) => setNewsletterEmail(e.target.value)}
-                        className="flex-1 rounded-xl border-gray-300 focus:border-blue-500"
-                        required
-                      />
-                      <Button
-                        type="submit"
-                        disabled={isSubscribing}
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-6 rounded-xl hover-shadow smooth-transition"
-                      >
-                        {isSubscribing ? "..." : "Subscribe"}
-                      </Button>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      We respect your privacy. Unsubscribe at any time.
-                    </p>
-                  </form>
-                </CardContent>
-              </Card>
-            </FloatingElement>
-          </div>
-        </div>
-      </section>
-
       {/* Team Contacts */}
-      <section className="py-16 px-4 bg-saint-bgSecondary">
+      <section className="py-16 px-4 bg-gradient-to-br from-slate-50 to-blue-50 relative">
         <div className="container mx-auto max-w-6xl">
-          <h2 className="text-3xl font-bold text-saint-title mb-8 text-center">Key Contacts</h2>
+          <div className="text-center mb-12">
+            <Badge variant="outline" className="mb-4 bg-white/50 border-blue-200 text-blue-700">
+              Leadership Team
+            </Badge>
+            <h2 className="text-4xl font-heading font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+              Key Contacts
+            </h2>
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+              Get in touch with our team leaders for specific inquiries and support.
+            </p>
+          </div>
           <div className="grid md:grid-cols-3 gap-6">
             {team.map((member, index) => (
-              <Card key={index}>
+              <Card key={index} className="bg-white/80 backdrop-blur-sm border-slate-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 shadow-lg">
                 <CardHeader>
-                  <div className="w-16 h-16 bg-saint-accent rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <span className="text-lg font-bold text-saint-title">
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <span className="text-lg font-bold text-white">
                       {member.name.split(' ').map(n => n[0]).join('')}
                     </span>
                   </div>
-                  <CardTitle className="text-center text-saint-title">{member.name}</CardTitle>
-                  <Badge variant="outline" className="mx-auto">{member.role}</Badge>
+                  <CardTitle className="text-center text-slate-800 font-heading">{member.name}</CardTitle>
+                  <Badge variant="outline" className="mx-auto bg-blue-50 border-blue-200 text-blue-700">{member.role}</Badge>
                 </CardHeader>
                 <CardContent className="text-center">
-                  <div className="space-y-2 text-sm text-saint-body">
-                    <div className="flex items-center justify-center">
-                      <Mail className="h-4 w-4 mr-2 text-saint-primary" />
+                  <div className="space-y-2 text-sm text-slate-600">
+                    <div className="flex items-center justify-center p-2 rounded-lg hover:bg-blue-50 transition-colors">
+                      <Mail className="h-4 w-4 mr-2 text-blue-500" />
                       {member.email}
                     </div>
-                    <div className="flex items-center justify-center">
-                      <MapPin className="h-4 w-4 mr-2 text-saint-primary" />
+                    <div className="flex items-center justify-center p-2 rounded-lg hover:bg-blue-50 transition-colors">
+                      <MapPin className="h-4 w-4 mr-2 text-blue-500" />
                       {member.office}
                     </div>
                   </div>
@@ -396,15 +353,25 @@ const Contact = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-16 px-4">
+      <section className="py-16 px-4 bg-gradient-to-br from-slate-50 to-blue-50 relative">
         <div className="container mx-auto max-w-4xl">
-          <h2 className="text-3xl font-bold text-saint-title mb-8 text-center">Frequently Asked Questions</h2>
+          <div className="text-center mb-12">
+            <Badge variant="outline" className="mb-4 bg-white/50 border-blue-200 text-blue-700">
+              Help Center
+            </Badge>
+            <h2 className="text-4xl font-heading font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+              Find answers to common questions about SAInT membership and events.
+            </p>
+          </div>
           <div className="space-y-6">
             {faqs.map((faq, index) => (
-              <Card key={index}>
+              <Card key={index} className="bg-white/80 backdrop-blur-sm border-slate-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 shadow-lg">
                 <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold text-saint-title mb-3">{faq.question}</h3>
-                  <p className="text-saint-body">{faq.answer}</p>
+                  <h3 className="text-xl font-heading font-bold text-slate-800 mb-3">{faq.question}</h3>
+                  <p className="text-slate-600 leading-relaxed">{faq.answer}</p>
                 </CardContent>
               </Card>
             ))}

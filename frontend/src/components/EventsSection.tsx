@@ -35,6 +35,23 @@ const EventsSection = () => {
     }
   ];
 
+  const pastEvents = [
+    {
+      title: "Spring Tech Conference 2024",
+      date: "April 15, 2024",
+      attendees: "120 participants",
+      location: "Main Auditorium",
+      description: "A successful conference featuring industry leaders and innovative presentations."
+    },
+    {
+      title: "React Workshop Series",
+      date: "March 10, 2024",
+      attendees: "85 participants",
+      location: "Lab 205",
+      description: "Comprehensive hands-on workshop covering React fundamentals and advanced patterns."
+    }
+  ];
+
   return (
     <section id="events" className="py-8 bg-gradient-to-br from-slate-50 to-blue-50 relative">
       <div className="container mx-auto px-4">
@@ -108,6 +125,57 @@ const EventsSection = () => {
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
+        </div>
+
+        {/* Past Events Section */}
+        <div className="mt-16">
+          <div className="text-center mb-8">
+            <Badge variant="outline" className="mb-4 bg-white border-purple-200 text-purple-700">
+              Past Events
+            </Badge>
+            <h3 className="text-3xl font-bold mb-4 text-slate-800">
+              Recent <span className="text-purple-600">Highlights</span>
+            </h3>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Check out our recent successful events and workshops.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {pastEvents.map((event, index) => (
+              <Card 
+                key={index} 
+                className="bg-white border-purple-200 hover:border-purple-300 hover:shadow-xl transition-all duration-300 shadow-lg relative z-10"
+              >
+                <CardHeader>
+                  <div className="flex justify-between items-start mb-2">
+                    <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-200">
+                      Completed
+                    </Badge>
+                  </div>
+                  <CardTitle className="text-xl text-slate-800 font-semibold">{event.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-slate-700 font-medium">{event.description}</p>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center text-sm text-slate-700">
+                      <Calendar className="h-4 w-4 mr-2 text-purple-500" />
+                      <span className="font-medium">{event.date}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-slate-700">
+                      <MapPin className="h-4 w-4 mr-2 text-purple-500" />
+                      <span className="font-medium">{event.location}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-slate-700">
+                      <Users className="h-4 w-4 mr-2 text-purple-500" />
+                      <span className="font-medium">{event.attendees}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     </section>

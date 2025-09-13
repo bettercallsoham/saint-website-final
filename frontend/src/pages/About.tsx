@@ -157,36 +157,6 @@ const About = () => {
         </div>
       </section>
 
-      {/* Values Section */}
-      <section className="py-16 px-4 bg-saint-bgSecondary">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-heading font-bold text-gray-900 mb-4">Our Core Values</h2>
-            <p className="text-xl text-gray-600">
-              The principles that guide everything we do as a community.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {values.map((value, index) => (
-              <Card key={index} className="text-center group hover-shadow smooth-transition bg-white border-0 shadow-lg overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br opacity-5 group-hover:opacity-10 smooth-transition" 
-                     style={{backgroundImage: `linear-gradient(to bottom right, var(--tw-gradient-stops))`}}></div>
-                <CardHeader className="relative z-10">
-                  <div className={`mx-auto w-16 h-16 bg-gradient-to-br ${value.color} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 smooth-transition shadow-lg`}>
-                    <value.icon className="h-8 w-8 text-white" />
-                  </div>
-                  <CardTitle className="text-xl text-gray-900 font-heading">{value.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="relative z-10">
-                  <p className="text-gray-600 leading-relaxed">{value.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* What We Do */}
       <section className="py-16 px-4 relative z-10">
         <div className="container mx-auto max-w-6xl">
@@ -220,22 +190,23 @@ const About = () => {
       </section>
 
       {/* Achievements */}
-      <section className="py-16 px-4 bg-saint-bgSecondary">
+      <section className="py-16 px-4 bg-white relative z-10">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
+            <Badge className="mb-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 text-lg font-bold">
+              Our Success Story
+            </Badge>
             <h2 className="text-4xl font-heading font-bold text-gray-900 mb-4">Our Achievements</h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-700 font-medium">
               Proud moments that define our journey and impact.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {achievements.map((achievement, index) => (
-              <Card key={index} className="hover-shadow smooth-transition bg-white border-0 shadow-lg">
-                <CardContent className="p-6">
-                  <p className="text-lg text-gray-700 font-medium text-center">{achievement}</p>
-                </CardContent>
-              </Card>
+              <div key={index} className="bg-gradient-to-br from-blue-50 to-purple-50 p-8 rounded-xl border border-gray-200 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <p className="text-lg text-gray-900 font-semibold text-center leading-relaxed">{achievement}</p>
+              </div>
             ))}
           </div>
         </div>
@@ -258,7 +229,7 @@ const About = () => {
                 </Button>
               </Link>
               <Link to="/events">
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-3 rounded-xl hover-shadow smooth-transition">
+                <Button size="lg" variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50 hover:border-blue-400 px-8 py-3 rounded-xl hover-shadow smooth-transition">
                   Attend an Event
                 </Button>
               </Link>

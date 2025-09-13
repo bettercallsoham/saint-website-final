@@ -3,7 +3,7 @@ import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Award, X, ChevronLeft, ChevronRight, Filter, Search } from "lucide-react";
+import { Calendar, Users, Award, X, ChevronLeft, ChevronRight, Filter, Search, ArrowRight, ExternalLink } from "lucide-react";
 import { FloatingElement, CustomArrow } from "@/components/InteractiveElements";
 import InteractiveBackground from "@/components/InteractiveBackground";
 import { useState } from "react";
@@ -375,22 +375,26 @@ const Gallery = () => {
       )}
 
       {/* Call to Action */}
-      <section className="py-16 px-4 bg-saint-bgSecondary">
+      <section className="py-16 px-4 relative z-10">
         <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl font-bold text-saint-title mb-6">
-            Want to Be Part of Our Next Story?
-          </h2>
-          <p className="text-lg text-saint-body mb-8">
-            Join SAInT and create memorable experiences while advancing your tech skills. 
-            Your journey starts here.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="px-8">
-              Join Our Community
-            </Button>
-            <Button variant="outline" size="lg" className="px-8">
-              View Upcoming Events
-            </Button>
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-12 text-white shadow-2xl">
+            <h2 className="text-4xl font-heading font-bold text-white mb-6">
+              Want to Be Part of Our Next Story?
+            </h2>
+            <p className="text-xl text-blue-50 mb-8 max-w-2xl mx-auto leading-relaxed">
+              Join SAInT and create memorable experiences while advancing your tech skills. 
+              Your journey starts here.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                Join Our Community
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button variant="secondary" size="lg" className="border-white text-blue-600 bg-white hover:bg-blue-50 px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                View Upcoming Events
+                <ExternalLink className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </section>

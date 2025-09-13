@@ -35,14 +35,14 @@ const AboutSection = () => {
   ];
 
   return (
-    <section id="about" className="py-12 bg-gradient-to-br from-slate-50 to-blue-50 relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
+    <section id="about" className="py-12 bg-gradient-to-br from-slate-50 to-blue-50 relative">
+      {/* Background Pattern - More subtle overlay */}
+      <div className="absolute inset-0 bg-grid-slate-100 opacity-30 -z-10" />
       
-      <div className="container mx-auto px-6">
+      <div className="container mx-auto px-6 relative z-10">
         {/* Section Header */}
         <div className="text-center mb-8">
-          <Badge variant="outline" className="mb-4 bg-white/50 border-blue-200 text-blue-700">
+          <Badge variant="outline" className="mb-4 bg-white border-blue-200 text-blue-700">
             About SAINT
           </Badge>
           <h2 className="text-5xl font-heading font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
@@ -73,12 +73,12 @@ const AboutSection = () => {
           {achievements.map((achievement, index) => {
             const IconComponent = achievement.icon;
             return (
-              <div key={index} className="text-center p-6 bg-white/70 backdrop-blur-sm rounded-xl border border-blue-100 shadow-sm hover:shadow-md transition-all duration-300">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white mb-4">
+              <div key={index} className="text-center p-6 bg-white rounded-xl border border-blue-100 shadow-lg hover:shadow-xl transition-all duration-300 relative z-10">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white mb-4 shadow-md">
                   <IconComponent className="w-8 h-8" />
                 </div>
-                <div className="text-3xl font-bold text-slate-800 mb-1">{achievement.label}</div>
-                <div className="text-slate-600">{achievement.description}</div>
+                <div className="text-3xl font-bold text-slate-900 mb-1">{achievement.label}</div>
+                <div className="text-slate-700 font-medium">{achievement.description}</div>
               </div>
             );
           })}
@@ -88,16 +88,17 @@ const AboutSection = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           {features.map((feature, index) => {
             const IconComponent = feature.icon;
+            // Special styling for Innovation Hub and Professional Network cards
+            const isSpecialCard = feature.title === "Innovation Hub" || feature.title === "Professional Network";
             return (
-              <Card key={index} className="group relative bg-white/80 backdrop-blur-sm border-slate-200 hover:border-blue-300 transition-all duration-300 hover:shadow-xl hover:-translate-y-2">
+              <Card key={index} className={`group relative bg-white border-slate-200 shadow-lg ${isSpecialCard ? '' : 'hover:border-blue-300 transition-all duration-300 hover:shadow-xl hover:-translate-y-2'} z-10`}>
                 <CardHeader className="text-center pb-4">
                   <div className="mx-auto mb-4 relative">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg transition-all duration-300 group-hover:shadow-xl group-hover:scale-105">
                       <IconComponent className="w-8 h-8 text-white" />
                     </div>
-                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
                   </div>
-                  <CardTitle className="text-xl font-heading font-bold text-slate-800 group-hover:text-blue-600 transition-colors">
+                  <CardTitle className="text-xl font-heading font-bold text-slate-900 group-hover:text-blue-600 transition-colors duration-300">
                     {feature.title}
                   </CardTitle>
                 </CardHeader>

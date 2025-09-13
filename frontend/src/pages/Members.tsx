@@ -22,7 +22,7 @@ const Members = () => {
       linkedin: "alex-chen-cs",
       email: "alex.chen@university.edu",
       avatar: "AC",
-      skills: ["AI/ML", "Python", "Leadership"],
+      skills: ["AWS", "Docker", "Cybersecurity"],
       projects: 12
     },
     {
@@ -35,7 +35,7 @@ const Members = () => {
       linkedin: "sarah-johnson-dev",
       email: "sarah.j@university.edu",
       avatar: "SJ",
-      skills: ["React", "UX Design", "Node.js"],
+      skills: ["AWS", "Docker", "Cybersecurity"],
       projects: 8
     },
     {
@@ -48,20 +48,20 @@ const Members = () => {
       linkedin: "michael-rodriguez-tech",
       email: "m.rodriguez@university.edu",
       avatar: "MR",
-      skills: ["AWS", "Docker", "DevOps"],
+      skills: ["AWS", "Docker", "Cybersecurity"],
       projects: 15
     },
     {
       name: "Emily Zhang",
       position: "Events Coordinator",
       year: "Sophomore",
-      major: "Information Systems",
-      bio: "Planning and executing amazing events. Interested in cybersecurity and data analytics.",
+      major: "IT",
+      bio: "Planning and executing amazing events. Interested in cybersecurity.",
       github: "emilyzhang",
       linkedin: "emily-zhang-is",
       email: "emily.zhang@university.edu",
       avatar: "EZ",
-      skills: ["Cybersecurity", "Data Analytics", "Event Planning"],
+      skills: ["AWS", "Docker", "Cybersecurity"],
       projects: 6
     }
   ];
@@ -246,40 +246,45 @@ const Members = () => {
       </section>
 
       {/* Top Contributors */}
-      <section className="py-16 px-4 bg-saint-bgSecondary">
+      <section className="py-16 px-4 bg-gradient-to-br from-slate-50 to-blue-50 relative">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-saint-title mb-4">Top Contributors</h2>
-            <p className="text-lg text-saint-body">
+            <Badge variant="outline" className="mb-4 bg-white/50 border-blue-200 text-blue-700">
+              Community Leaders
+            </Badge>
+            <h2 className="text-4xl font-heading font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+              Top Contributors
+            </h2>
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
               Recognizing our most active and engaged community members.
             </p>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
             {topContributors.map((contributor, index) => (
-              <Card key={index} className="text-center">
+              <Card key={index} className="text-center bg-white/80 backdrop-blur-sm border-slate-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 shadow-lg">
                 <CardHeader>
                   <div className="relative">
-                    <div className="w-16 h-16 bg-saint-accent rounded-full mx-auto mb-3 flex items-center justify-center">
-                      <span className="text-lg font-bold text-saint-title">
+                    <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mx-auto mb-3 flex items-center justify-center shadow-lg">
+                      <span className="text-lg font-bold text-white">
                         {contributor.name.split(' ').map(n => n[0]).join('')}
                       </span>
                     </div>
                     {index < 3 && (
                       <div className="absolute -top-2 -right-2">
-                        <Star className="h-6 w-6 text-saint-primary fill-current" />
+                        <Star className="h-6 w-6 text-yellow-400 fill-current drop-shadow-sm" />
                       </div>
                     )}
                   </div>
-                  <CardTitle className="text-base text-saint-title">{contributor.name}</CardTitle>
-                  <div className="flex items-center justify-center text-saint-primary font-semibold">
+                  <CardTitle className="text-base font-semibold text-slate-800">{contributor.name}</CardTitle>
+                  <div className="flex items-center justify-center text-blue-600 font-semibold">
                     {contributor.contributions} contributions
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-1 justify-center">
                     {contributor.specialties.map((tech, techIndex) => (
-                      <Badge key={techIndex} variant="outline" className="text-xs">
+                      <Badge key={techIndex} variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
                         {tech}
                       </Badge>
                     ))}
@@ -292,20 +297,24 @@ const Members = () => {
       </section>
 
       {/* Join Us Section */}
-      <section className="py-16 px-4">
+      <section className="py-16 px-4 relative z-10">
         <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl font-bold text-saint-title mb-6">Ready to Join Our Community?</h2>
-          <p className="text-lg text-saint-body mb-8">
-            Become part of a supportive network of tech enthusiasts. 
-            Learn, build, and grow with like-minded students.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="px-8">
-              Join SAInT Today
-            </Button>
-            <Button variant="outline" size="lg" className="px-8">
-              Learn More
-            </Button>
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-12 text-white shadow-2xl">
+            <h2 className="text-4xl font-heading font-bold text-white mb-6">Ready to Join Our Community?</h2>
+            <p className="text-xl text-blue-50 mb-8 max-w-2xl mx-auto leading-relaxed">
+              Become part of a supportive network of tech enthusiasts. 
+              Learn, build, and grow with like-minded students.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                Join SAInT Today
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button variant="secondary" size="lg" className="border-white text-blue-600 bg-white hover:bg-blue-50 px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                Learn More
+                <ExternalLink className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </section>

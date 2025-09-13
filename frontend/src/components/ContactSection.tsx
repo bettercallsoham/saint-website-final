@@ -3,62 +3,73 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Mail, Phone, MapPin, Instagram, Twitter, Linkedin } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Mail, Phone, MapPin, Instagram, Twitter, Linkedin, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const ContactSection = () => {
   return (
-    <section id="contact" className="py-12 bg-saint-bgSecondary relative z-10">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-8">
-          <h2 className="text-4xl font-bold mb-4 text-saint-title">
-            Get in <span className="text-saint-primary">Touch</span>
+    <section id="contact" className="py-12 bg-gradient-to-br from-slate-50 to-blue-50 relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
+      
+      <div className="container mx-auto px-6">
+        <div className="text-center mb-12">
+          <Badge variant="outline" className="mb-4 bg-white/50 border-blue-200 text-blue-700">
+            Get in Touch
+          </Badge>
+          <h2 className="text-5xl font-heading font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+            Let's Start a <span className="block">Conversation</span>
           </h2>
-          <p className="text-xl text-saint-body max-w-2xl mx-auto">
+          <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
             Have questions about SAInT? Want to collaborate or sponsor an event? We'd love to hear from you!
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
           {/* Contact Form */}
-          <Card>
+          <Card className="bg-white/80 backdrop-blur-sm border-slate-200 shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader>
-              <CardTitle className="text-2xl text-saint-title">Send us a Message</CardTitle>
+              <CardTitle className="text-2xl font-heading font-bold text-slate-800 flex items-center gap-2">
+                <Send className="w-6 h-6 text-blue-600" />
+                Send us a Message
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>First Name</Label>
-                  <Input placeholder="John" />
+                  <Label className="text-slate-700 font-medium">First Name</Label>
+                  <Input placeholder="John" className="border-slate-200 focus:border-blue-400 focus:ring-blue-400" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Last Name</Label>
-                  <Input placeholder="Doe" />
+                  <Label className="text-slate-700 font-medium">Last Name</Label>
+                  <Input placeholder="Doe" className="border-slate-200 focus:border-blue-400 focus:ring-blue-400" />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label>Email</Label>
-                <Input type="email" placeholder="john.doe@example.com" />
+                <Label className="text-slate-700 font-medium">Email</Label>
+                <Input type="email" placeholder="john.doe@example.com" className="border-slate-200 focus:border-blue-400 focus:ring-blue-400" />
               </div>
               
               <div className="space-y-2">
-                <Label>Subject</Label>
-                <Input placeholder="What's this about?" />
+                <Label className="text-slate-700 font-medium">Subject</Label>
+                <Input placeholder="What's this about?" className="border-slate-200 focus:border-blue-400 focus:ring-blue-400" />
               </div>
               
               <div className="space-y-2">
-                <Label>Message</Label>
+                <Label className="text-slate-700 font-medium">Message</Label>
                 <Textarea 
                   placeholder="Tell us more about your inquiry..." 
-                  className="min-h-[120px]"
+                  className="min-h-[120px] border-slate-200 focus:border-blue-400 focus:ring-blue-400"
                 />
               </div>
               
               <Button 
-                className="w-full"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
                 size="lg"
               >
+                <Send className="w-4 h-4 mr-2" />
                 Send Message
               </Button>
             </CardContent>
@@ -66,64 +77,66 @@ const ContactSection = () => {
 
           {/* Contact Information */}
           <div className="space-y-6">
-            <Card>
+            <Card className="bg-white/80 backdrop-blur-sm border-slate-200 shadow-xl">
               <CardHeader>
-                <CardTitle className="text-2xl text-saint-title">Contact Information</CardTitle>
+                <CardTitle className="text-2xl font-heading font-bold text-slate-800">Contact Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-saint-primary rounded-lg">
-                    <Mail className="h-6 w-6 text-saint-btnText" />
+                <div className="flex items-center space-x-4 p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100">
+                  <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-md">
+                    <Mail className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <p className="font-medium text-saint-title">Email</p>
-                    <p className="text-saint-body">contact@saint.university.edu</p>
+                    <p className="font-semibold text-slate-800">Email</p>
+                    <p className="text-slate-600">sohamsk93@gmail.com</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-saint-primary rounded-lg">
-                    <Phone className="h-6 w-6 text-saint-btnText" />
+                <div className="flex items-center space-x-4 p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100">
+                  <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-md">
+                    <Phone className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <p className="font-medium text-saint-title">Phone</p>
-                    <p className="text-saint-body">+1 (555) 123-4567</p>
+                    <p className="font-semibold text-slate-800">Phone</p>
+                    <p className="text-slate-600">+91 8275xxxxxx</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-saint-primary rounded-lg">
-                    <MapPin className="h-6 w-6 text-saint-btnText" />
+                <div className="flex items-center space-x-4 p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100">
+                  <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-md">
+                    <MapPin className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <p className="font-medium text-saint-title">Location</p>
-                    <p className="text-saint-body">Computer Science Building<br />Room 201, University Campus</p>
+                    <p className="font-semibold text-slate-800">Location</p>
+                    <p className="text-slate-600">Computer Science Building<br />Room 201, University Campus</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Social Media & More Info */}
-            <Card>
+            <Card className="bg-gradient-to-r from-blue-600 to-purple-600 border-0 shadow-xl">
               <CardHeader>
-                <CardTitle className="text-xl text-saint-title">Connect & Learn More</CardTitle>
+                <CardTitle className="text-xl font-heading font-bold text-white">Connect & Learn More</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex space-x-4">
-                  <Button size="icon" variant="outline">
+              <CardContent className="space-y-6">
+                <div className="flex justify-start space-x-4">
+                  <Button size="icon" variant="secondary" className="bg-white/20 hover:bg-white/30 border-white/30 text-white">
                     <Instagram className="h-5 w-5" />
                   </Button>
-                  <Button size="icon" variant="outline">
+                  <Button size="icon" variant="secondary" className="bg-white/20 hover:bg-white/30 border-white/30 text-white">
                     <Twitter className="h-5 w-5" />
                   </Button>
-                  <Button size="icon" variant="outline">
+                  <Button size="icon" variant="secondary" className="bg-white/20 hover:bg-white/30 border-white/30 text-white">
                     <Linkedin className="h-5 w-5" />
                   </Button>
                 </div>
                 <Link to="/contact">
-                  <Button variant="outline" className="w-full">
-                    Visit Full Contact Page
+                <div className="pt-[5px]">
+                  <Button variant="secondary" className="w-full bg-white text-blue-600 hover:bg-blue-50 font-medium">
+                    View Full Contact Page
                   </Button>
+                </div>
                 </Link>
               </CardContent>
             </Card>
