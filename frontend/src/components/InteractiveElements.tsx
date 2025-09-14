@@ -17,15 +17,47 @@ export const AnimatedUnderline = ({ children, className = "", isActive = false }
     >
       {children}
       
-      {/* Simple underline that respects reduced motion */}
+      {/* Sketched underline using SVG path */}
       <div
-        className={`absolute -bottom-1 left-0 h-0.5 bg-blue-500 transition-all duration-300 ${
-          isHovered || isActive ? 'w-full opacity-100' : 'w-0 opacity-0'
+        className={`absolute -bottom-1 left-0 w-full h-2 transition-all duration-300 ${
+          isHovered || isActive ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'
         }`}
         style={{
-          transitionProperty: 'width, opacity',
+          transformOrigin: 'left center',
+          transitionProperty: 'opacity, transform',
         }}
-      />
+      >
+        <svg 
+          width="100%" 
+          height="8" 
+          viewBox="0 0 100 8" 
+          preserveAspectRatio="none"
+          className="overflow-visible"
+        >
+          <path
+            d="M 0,4 Q 10,2 20,4 T 40,4 T 60,4 T 80,4 T 100,4"
+            stroke="#3b82f6"
+            strokeWidth="2"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="animate-pulse"
+            style={{
+              filter: 'drop-shadow(0 1px 2px rgba(59, 130, 246, 0.2))',
+            }}
+          />
+          {/* Add slight roughness with a second path */}
+          <path
+            d="M 2,5 Q 12,3 22,5 T 42,5 T 62,5 T 82,5 T 98,5"
+            stroke="#3b82f6"
+            strokeWidth="1"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity="0.6"
+          />
+        </svg>
+      </div>
     </div>
   );
 };
