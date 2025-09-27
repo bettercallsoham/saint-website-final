@@ -10,16 +10,18 @@ import { Mail, Phone, MapPin, Clock, Send, Github, Linkedin, Twitter, Instagram,
 import { FloatingElement, CustomArrow } from "@/components/InteractiveElements";
 import InteractiveBackground from "@/components/InteractiveBackground";
 import { useState } from "react";
+import { useContactSubmit } from "@/hooks/useContact";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     subject: "",
-    message: ""
+    message: "",
+    phone: ""
   });
   
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const contactMutation = useContactSubmit();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -30,17 +32,24 @@ const Contact = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
-    // TODO: Implement actual form submission
-    console.log("Form submission:", formData);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      // Reset form or show success message
-      setFormData({ name: "", email: "", subject: "", message: "" });
-    }, 1000);
+    try {
+      const result = await contactMutation.mutateAsync({
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+        phone: formData.phone
+      });
+      
+      if (result.success) {
+        // Reset form on success
+        setFormData({ name: "", email: "", subject: "", message: "", phone: "" });
+      }
+    } catch (error) {
+      // Error is handled by the useContactSubmit hook
+      console.error("Contact form submission error:", error);
+    }
   };
 
   const socialLinks = [
@@ -224,10 +233,10 @@ const Contact = () => {
                       <Button 
                         type="submit" 
                         className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-xl hover-shadow smooth-transition"
-                        disabled={isSubmitting}
+                        disabled={contactMutation.isPending}
                       >
                         <Send className="h-4 w-4 mr-2" />
-                        {isSubmitting ? "Sending..." : "Send Message"}
+                        {contactMutation.isPending ? "Sending..." : "Send Message"}
                       </Button>
                     </form>
                   </CardContent>

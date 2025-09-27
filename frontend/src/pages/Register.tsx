@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
+import { useRegister } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -12,9 +14,13 @@ const Register = () => {
     lastName: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    studentId: "",
+    year: "",
+    department: ""
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const registerMutation = useRegister();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -25,23 +31,37 @@ const Register = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
     // Basic validation
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!");
-      setIsLoading(false);
+      toast.error("Passwords don't match!");
       return;
     }
 
-    // TODO: Implement actual registration logic
-    console.log("User registration attempt:", formData);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      // Add your registration logic here
-    }, 1000);
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.studentId || !formData.year || !formData.department) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      const result = await registerMutation.mutateAsync({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        studentId: formData.studentId,
+        year: formData.year,
+        department: formData.department
+      });
+      
+      if (result.success) {
+        navigate("/");
+      }
+    } catch (error) {
+      // Error is handled by the useRegister hook
+      console.error("Registration error:", error);
+    }
   };
 
   // Hidden admin access - only for those who know the secret route
@@ -116,6 +136,9 @@ const Register = () => {
                 onChange={handleInputChange}
                 required
               />
+              <p className="text-xs text-gray-600">
+                Must contain uppercase, lowercase, number, and special character
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -131,12 +154,58 @@ const Register = () => {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="studentId">Student ID</Label>
+              <Input
+                id="studentId"
+                name="studentId"
+                type="text"
+                placeholder="Enter your student ID"
+                value={formData.studentId}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="year">Year</Label>
+                <select
+                  id="year"
+                  name="year"
+                  value={formData.year}
+                  onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  required
+                >
+                  <option value="">Select Year</option>
+                  <option value="1">1st Year</option>
+                  <option value="2">2nd Year</option>
+                  <option value="3">3rd Year</option>
+                  <option value="4">4th Year</option>
+                  <option value="Graduate">Graduate</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="department">Department</Label>
+                <Input
+                  id="department"
+                  name="department"
+                  type="text"
+                  placeholder="Computer Science"
+                  value={formData.department}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+            </div>
+
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading}
+              disabled={registerMutation.isPending}
             >
-              {isLoading ? "Creating account..." : "Create Account"}
+              {registerMutation.isPending ? "Creating account..." : "Create Account"}
             </Button>
           </form>
           

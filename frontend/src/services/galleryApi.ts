@@ -1,0 +1,52 @@
+import apiService, { ApiResponse } from './apiService';
+import { API_ENDPOINTS } from '../config/api';
+
+// Gallery Types
+export interface GalleryItem {
+  id: string;
+  title: string;
+  description?: string;
+  imageUrl: string;
+  thumbnailUrl?: string;
+  category: string;
+  eventId?: string;
+  eventName?: string;
+  date: string;
+  photographer?: string;
+  tags?: string[];
+  likes: number;
+  views: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateGalleryItemData {
+  title: string;
+  description?: string;
+  imageUrl: string;
+  thumbnailUrl?: string;
+  category: string;
+  eventId?: string;
+  eventName?: string;
+  date: string;
+  photographer?: string;
+  tags?: string[];
+}
+
+// Gallery API Functions
+export const galleryApi = {
+  // Get all gallery items
+  getAll: async (): Promise<ApiResponse<GalleryItem[]>> => {
+    return apiService.get<GalleryItem[]>(API_ENDPOINTS.GALLERY.GET_ALL);
+  },
+
+  // Get single gallery item by ID
+  getById: async (id: string): Promise<ApiResponse<GalleryItem>> => {
+    return apiService.get<GalleryItem>(API_ENDPOINTS.GALLERY.GET_ONE(id));
+  },
+
+  // Create new gallery item (Admin only)
+  create: async (itemData: CreateGalleryItemData): Promise<ApiResponse<GalleryItem>> => {
+    return apiService.post<GalleryItem>(API_ENDPOINTS.GALLERY.CREATE, itemData);
+  },
+};

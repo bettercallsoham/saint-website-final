@@ -1,28 +1,37 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
+import { useLogin } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const loginMutation = useLogin();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    // TODO: Implement actual authentication logic
-    console.log("Login attempt:", { email, password });
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      // Add your authentication logic here
-    }, 1000);
+    if (!email || !password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    try {
+      const result = await loginMutation.mutateAsync({ email, password });
+      if (result.success) {
+        // Redirect to home page or dashboard
+        navigate("/");
+      }
+    } catch (error) {
+      // Error is handled by the useLogin hook
+      console.error("Login error:", error);
+    }
   };
 
   return (
@@ -65,9 +74,9 @@ const Login = () => {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isLoading}
+                disabled={loginMutation.isPending}
               >
-                {isLoading ? "Signing in..." : "Sign in"}
+                {loginMutation.isPending ? "Signing in..." : "Sign in"}
               </Button>
             </form>
             
