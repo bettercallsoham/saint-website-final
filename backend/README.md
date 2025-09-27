@@ -1,18 +1,4 @@
-# SAINT Backend API
-
-A proxy API server for the SAINT (Student Association of Information Technology) website that interfaces with the external backend at `https://saint-data.vercel.app`.
-
-## Features
-
-- **Proxy Architecture**: Forwards requests to external API while providing additional middleware
-- **Authentication**: JWT-based authentication with role-based access control
-- **Rate Limiting**: Configurable rate limiting for API protection
-- **Validation**: Input validation using express-validator
-- **Logging**: Comprehensive logging with Winston
-- **Security**: Helmet.js for security headers, CORS configuration
-- **Compression**: Response compression for better performance
-
-## Project Structure
+## Project Backend Structure
 
 ```
 backend/
@@ -165,14 +151,3 @@ The application includes comprehensive error handling:
 - **JWT Authentication**: Secure user sessions
 - **Environment Variables**: Sensitive data protection
 
-## Logging
-
-Winston-based logging with configurable levels:
-- Request/response logging
-- Error logging with stack traces
-- Structured logging format
-- Configurable log levels and output
-
-## License
-
-MIT License - see LICENSE file for details.
