@@ -4,10 +4,61 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Phone, MapPin, Instagram, Twitter, Linkedin, Send } from "lucide-react";
+import { Mail, Phone, MapPin, Instagram, Twitter, Linkedin, Send, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import { useContactSubmit } from "@/hooks/useContact";
 
 const ContactSection = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+    phone: ""
+  });
+
+  const contactMutation = useContactSubmit();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
+      return;
+    }
+
+    try {
+      const result = await contactMutation.mutateAsync({
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+        phone: formData.phone || undefined
+      });
+
+      if (result.success) {
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          subject: "",
+          message: "",
+          phone: ""
+        });
+      }
+    } catch (error) {
+      console.error("Contact form error:", error);
+    }
+  };
+
   return (
     <section id="contact" className="py-12 bg-gradient-to-br from-slate-50 to-blue-50 relative overflow-hidden">
       {/* Background Pattern */}
@@ -36,42 +87,87 @@ const ContactSection = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-4">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label className="text-slate-700 font-medium">First Name</Label>
-                  <Input placeholder="John" className="border-slate-200 focus:border-blue-400 focus:ring-blue-400" />
+                  <Label className="text-slate-700 font-medium">Full Name *</Label>
+                  <Input 
+                    name="name"
+                    placeholder="John Doe" 
+                    className="border-slate-200 focus:border-blue-400 focus:ring-blue-400"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                  />
                 </div>
+                
                 <div className="space-y-2">
-                  <Label className="text-slate-700 font-medium">Last Name</Label>
-                  <Input placeholder="Doe" className="border-slate-200 focus:border-blue-400 focus:ring-blue-400" />
+                  <Label className="text-slate-700 font-medium">Email *</Label>
+                  <Input 
+                    name="email"
+                    type="email" 
+                    placeholder="john.doe@example.com" 
+                    className="border-slate-200 focus:border-blue-400 focus:ring-blue-400"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                  />
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-slate-700 font-medium">Email</Label>
-                <Input type="email" placeholder="john.doe@example.com" className="border-slate-200 focus:border-blue-400 focus:ring-blue-400" />
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-slate-700 font-medium">Subject</Label>
-                <Input placeholder="What's this about?" className="border-slate-200 focus:border-blue-400 focus:ring-blue-400" />
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-slate-700 font-medium">Message</Label>
-                <Textarea 
-                  placeholder="Tell us more about your inquiry..." 
-                  className="min-h-[120px] border-slate-200 focus:border-blue-400 focus:ring-blue-400"
-                />
-              </div>
-              
-              <Button 
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                size="lg"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                Send Message
-              </Button>
+
+                <div className="space-y-2">
+                  <Label className="text-slate-700 font-medium">Phone (Optional)</Label>
+                  <Input 
+                    name="phone"
+                    type="tel" 
+                    placeholder="+91 12345 67890" 
+                    className="border-slate-200 focus:border-blue-400 focus:ring-blue-400"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-slate-700 font-medium">Subject *</Label>
+                  <Input 
+                    name="subject"
+                    placeholder="What's this about?" 
+                    className="border-slate-200 focus:border-blue-400 focus:ring-blue-400"
+                    value={formData.subject}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-slate-700 font-medium">Message *</Label>
+                  <Textarea 
+                    name="message"
+                    placeholder="Tell us more about your inquiry..." 
+                    className="min-h-[120px] border-slate-200 focus:border-blue-400 focus:ring-blue-400"
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                
+                <Button 
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                  size="lg"
+                  disabled={contactMutation.isPending}
+                >
+                  {contactMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      Send Message
+                    </>
+                  )}
+                </Button>
+              </form>
             </CardContent>
           </Card>
 

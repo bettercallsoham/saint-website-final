@@ -1,56 +1,77 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, ArrowRight } from "lucide-react";
+import { Calendar, MapPin, Users, ArrowRight, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useEvents } from "@/hooks/useEvents";
+import { format } from "date-fns";
 
 const EventsSection = () => {
-  const upcomingEvents = [
-    {
-      title: "AI/ML Workshop Series",
-      date: "September 20, 2025",
-      time: "2:00 PM",
-      location: "Tech Hall 101",
-      capacity: "60 seats",
-      status: "registration-open",
-      description: "Learn the fundamentals of Machine Learning with hands-on Python exercises."
-    },
-    {
-      title: "Fall Hackathon 2025",
-      date: "October 15, 2025",
-      time: "9:00 AM",
-      location: "Innovation Center",
-      capacity: "100 participants",
-      status: "filling-fast",
-      description: "48-hour coding challenge focusing on sustainable technology solutions."
-    },
-    {
-      title: "Industry Networking Night",
-      date: "September 25, 2025",
-      time: "6:00 PM",
-      location: "Student Union Ballroom",
-      capacity: "80 seats",
-      status: "upcoming",
-      description: "Meet with tech industry professionals and explore internship opportunities."
-    }
-  ];
+  const { data: events, isLoading, error } = useEvents();
 
-  const pastEvents = [
-    {
-      title: "Spring Tech Conference 2024",
-      date: "April 15, 2024",
-      attendees: "120 participants",
-      location: "Main Auditorium",
-      description: "A successful conference featuring industry leaders and innovative presentations."
-    },
-    {
-      title: "React Workshop Series",
-      date: "March 10, 2024",
-      attendees: "85 participants",
-      location: "Lab 205",
-      description: "Comprehensive hands-on workshop covering React fundamentals and advanced patterns."
+  // Helper function to get event status badge
+  const getEventStatusBadge = (event: any) => {
+    const eventDate = new Date(event.date);
+    const now = new Date();
+    
+    if (eventDate < now) return { text: "Completed", variant: "secondary" as const };
+    if (event.status === "cancelled") return { text: "Cancelled", variant: "destructive" as const };
+    if (event.registrationRequired && event.maxParticipants && event.currentParticipants >= event.maxParticipants * 0.9) {
+      return { text: "Filling Fast", variant: "secondary" as const };
     }
-  ];
+    if (eventDate > now) return { text: "Registration Open", variant: "default" as const };
+    return { text: "Upcoming", variant: "outline" as const };
+  };
+
+  // Separate upcoming and past events
+  const now = new Date();
+  const upcomingEvents = events?.filter(event => new Date(event.date) >= now) || [];
+  const pastEvents = events?.filter(event => new Date(event.date) < now) || [];
+
+  if (isLoading) {
+    return (
+      <section id="events" className="py-8 bg-gradient-to-br from-slate-50 to-blue-50 relative">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <Badge variant="outline" className="mb-4 bg-white/50 border-blue-200 text-blue-700">
+              Upcoming Events
+            </Badge>
+            <h2 className="text-4xl lg:text-5xl font-bold mb-4 text-saint-title">
+              Upcoming <span className="text-saint-primary">Events</span>
+            </h2>
+            <p className="text-xl text-saint-body max-w-2xl mx-auto">
+              Join us for exciting tech events, workshops, and networking opportunities designed to enhance your skills and career.
+            </p>
+          </div>
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <span className="ml-2 text-blue-600">Loading events...</span>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section id="events" className="py-8 bg-gradient-to-br from-slate-50 to-blue-50 relative">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <Badge variant="outline" className="mb-4 bg-white/50 border-blue-200 text-blue-700">
+              Upcoming Events
+            </Badge>
+            <h2 className="text-4xl lg:text-5xl font-bold mb-4 text-saint-title">
+              Upcoming <span className="text-saint-primary">Events</span>
+            </h2>
+          </div>
+          <div className="text-center py-12">
+            <p className="text-red-600 mb-4">Unable to load events at this time.</p>
+            <p className="text-gray-600">Please check back later or contact us if the problem persists.</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="events" className="py-8 bg-gradient-to-br from-slate-50 to-blue-50 relative">
@@ -68,50 +89,53 @@ const EventsSection = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-          {upcomingEvents.map((event, index) => (
-            <Card 
-              key={index} 
-              className="bg-white/80 backdrop-blur-sm border-slate-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 shadow-lg"
-            >
-              <CardHeader>
-                <div className="flex justify-between items-start mb-2">
-                  <Badge 
-                    variant={event.status === "registration-open" ? "default" : event.status === "filling-fast" ? "secondary" : "outline"}
-                  >
-                    {event.status === "registration-open" ? "Registration Open" : 
-                     event.status === "filling-fast" ? "Filling Fast" : "Upcoming"}
-                  </Badge>
-                </div>
-                <CardTitle className="text-xl text-saint-title">{event.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-saint-body">{event.description}</p>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center text-sm text-saint-body">
-                    <Calendar className="h-4 w-4 mr-2 text-saint-primary" />
-                    {event.date} at {event.time}
+          {upcomingEvents.slice(0, 6).map((event) => {
+            const statusBadge = getEventStatusBadge(event);
+            return (
+              <Card 
+                key={event.id} 
+                className="bg-white/80 backdrop-blur-sm border-slate-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 shadow-lg"
+              >
+                <CardHeader>
+                  <div className="flex justify-between items-start mb-2">
+                    <Badge variant={statusBadge.variant}>
+                      {statusBadge.text}
+                    </Badge>
                   </div>
-                  <div className="flex items-center text-sm text-saint-body">
-                    <MapPin className="h-4 w-4 mr-2 text-saint-primary" />
-                    {event.location}
+                  <CardTitle className="text-xl text-saint-title">{event.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-saint-body">{event.description}</p>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center text-sm text-saint-body">
+                      <Calendar className="h-4 w-4 mr-2 text-saint-primary" />
+                      {format(new Date(event.date), "MMMM d, yyyy")} at {event.time}
+                    </div>
+                    <div className="flex items-center text-sm text-saint-body">
+                      <MapPin className="h-4 w-4 mr-2 text-saint-primary" />
+                      {event.location}
+                    </div>
+                    {event.maxParticipants && (
+                      <div className="flex items-center text-sm text-saint-body">
+                        <Users className="h-4 w-4 mr-2 text-saint-primary" />
+                        {event.currentParticipants}/{event.maxParticipants} participants
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center text-sm text-saint-body">
-                    <Users className="h-4 w-4 mr-2 text-saint-primary" />
-                    {event.capacity}
-                  </div>
-                </div>
 
-                <Button 
-                  className="w-full group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                  size="sm"
-                >
-                  RSVP Now
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                  <Button 
+                    className="w-full group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                    size="sm"
+                    disabled={event.maxParticipants && event.currentParticipants >= event.maxParticipants}
+                  >
+                    {event.registrationRequired ? "RSVP Now" : "Learn More"}
+                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         <div className="text-center">
@@ -142,9 +166,9 @@ const EventsSection = () => {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            {pastEvents.map((event, index) => (
+            {pastEvents.slice(0, 4).map((event) => (
               <Card 
-                key={index} 
+                key={event.id} 
                 className="bg-white border-purple-200 hover:border-purple-300 hover:shadow-xl transition-all duration-300 shadow-lg relative z-10"
               >
                 <CardHeader>
@@ -161,7 +185,7 @@ const EventsSection = () => {
                   <div className="space-y-2">
                     <div className="flex items-center text-sm text-slate-700">
                       <Calendar className="h-4 w-4 mr-2 text-purple-500" />
-                      <span className="font-medium">{event.date}</span>
+                      <span className="font-medium">{format(new Date(event.date), "MMMM d, yyyy")}</span>
                     </div>
                     <div className="flex items-center text-sm text-slate-700">
                       <MapPin className="h-4 w-4 mr-2 text-purple-500" />
@@ -169,7 +193,7 @@ const EventsSection = () => {
                     </div>
                     <div className="flex items-center text-sm text-slate-700">
                       <Users className="h-4 w-4 mr-2 text-purple-500" />
-                      <span className="font-medium">{event.attendees}</span>
+                      <span className="font-medium">{event.currentParticipants} participants</span>
                     </div>
                   </div>
                 </CardContent>

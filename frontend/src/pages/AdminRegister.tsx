@@ -61,17 +61,33 @@ const AdminRegister = () => {
       return;
     }
 
-    // TODO: Implement actual admin registration logic
-    console.log("Admin registration attempt:", formData);
-    
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Use the admin registration API
+      const adminData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        adminSecret: ADMIN_SECRET
+      };
+
+      // TODO: Implement actual admin registration logic with API call
+      console.log("Admin registration attempt:", adminData);
+      
+      // Simulate API call for now
+      setTimeout(() => {
+        setIsLoading(false);
+        alert("Admin account created successfully!");
+        sessionStorage.removeItem('admin_verified');
+        sessionStorage.removeItem('admin_intent');
+        navigate('/login');
+      }, 1000);
+    } catch (error) {
       setIsLoading(false);
-      alert("Admin account created successfully!");
-      sessionStorage.removeItem('admin_verified');
-      sessionStorage.removeItem('admin_intent');
-      navigate('/login');
-    }, 1000);
+      alert("Failed to create admin account. Please try again.");
+      console.error("Admin registration error:", error);
+    }
   };
 
   if (step === 'verify') {

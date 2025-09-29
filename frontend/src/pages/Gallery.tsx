@@ -3,92 +3,27 @@ import Footer from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Award, X, ChevronLeft, ChevronRight, Filter, Search, ArrowRight, ExternalLink } from "lucide-react";
+import { Calendar, Users, Award, X, ChevronLeft, ChevronRight, Filter, Search, ArrowRight, ExternalLink, Loader2, Image, Eye, Heart, MessageCircle, Share2 } from "lucide-react";
 import { FloatingElement, CustomArrow } from "@/components/InteractiveElements";
 import InteractiveBackground from "@/components/InteractiveBackground";
 import { useState } from "react";
+import { useGallery } from "@/hooks/useGallery";
+import { format } from "date-fns";
 
 const Gallery = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<number | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const { data: galleryItems, isLoading, error } = useGallery();
 
-  const categories = ["All", "Hackathon", "Workshop", "Networking", "Training", "Awards"];
-
-  const galleryItems = [
-    {
-      id: 1,
-      title: "Fall Hackathon 2024",
-      date: "October 2024",
-      category: "Hackathon",
-      participants: 85,
-      description: "48-hour coding marathon focused on sustainable technology solutions.",
-      imageAlt: "Students coding during hackathon",
-      highlights: ["15 teams competed", "3 winning projects", "$5000 in prizes"],
-      featured: true
-    },
-    {
-      id: 2,
-      title: "AI Workshop Series",
-      date: "September 2024",
-      category: "Workshop",
-      participants: 60,
-      description: "Three-part workshop series on machine learning fundamentals.",
-      imageAlt: "Students learning AI concepts",
-      highlights: ["3 days of learning", "Hands-on Python coding", "Industry guest speakers"],
-      featured: true
-    },
-    {
-      id: 3,
-      title: "Tech Industry Night",
-      date: "August 2024",
-      category: "Networking",
-      participants: 120,
-      description: "Networking event with leading tech companies and recruiters.",
-      imageAlt: "Professional networking event",
-      highlights: ["12 companies attended", "50+ job opportunities", "Career panel discussion"],
-      featured: false
-    },
-    {
-      id: 4,
-      title: "React Bootcamp",
-      date: "July 2024",
-      category: "Training",
-      participants: 45,
-      description: "Intensive bootcamp covering React.js from basics to advanced concepts.",
-      imageAlt: "React coding bootcamp session",
-      highlights: ["5 days intensive", "Final project showcase", "Portfolio building"],
-      featured: true
-    },
-    {
-      id: 5,
-      title: "Annual Awards Ceremony",
-      date: "May 2024",
-      category: "Awards",
-      participants: 200,
-      description: "Celebrating outstanding achievements in technology and leadership.",
-      imageAlt: "Awards ceremony with students",
-      highlights: ["10 awards given", "Alumni speakers", "Achievement recognition"],
-      featured: false
-    },
-    {
-      id: 6,
-      title: "Open Source Contributions Day",
-      date: "April 2024",
-      category: "Workshop",
-      participants: 35,
-      description: "Learning how to contribute to open source projects and build portfolios.",
-      imageAlt: "Students working on open source projects",
-      highlights: ["15 projects contributed to", "GitHub workflows", "Mentorship sessions"],
-      featured: false
-    }
-  ];
+  // Extract unique categories from API data
+  const categories = ["All", ...new Set(galleryItems?.map(item => item.category) || [])];
 
   const filteredItems = selectedCategory === "All" 
-    ? galleryItems 
-    : galleryItems.filter(item => item.category === selectedCategory);
+    ? (galleryItems || [])
+    : (galleryItems || []).filter(item => item.category === selectedCategory);
 
-  const openLightbox = (id: number) => {
+  const openLightbox = (id: string) => {
     setSelectedImage(id);
     setLightboxOpen(true);
   };
@@ -125,11 +60,85 @@ const Gallery = () => {
     }
   };
 
+  // Calculate dynamic stats from API data
   const stats = [
-    { label: "Events Captured", value: "25+", icon: Calendar },
-    { label: "Total Participants", value: "800+", icon: Users },
-    { label: "Achievements", value: "50+", icon: Award }
+    { 
+      label: "Gallery Items", 
+      value: galleryItems?.length?.toString() || "0", 
+      icon: Calendar 
+    },
+    { 
+      label: "Total Views", 
+      value: `${galleryItems?.reduce((sum, item) => sum + (item.views || 0), 0) || 0}`, 
+      icon: Users 
+    },
+    { 
+      label: "Total Likes", 
+      value: `${galleryItems?.reduce((sum, item) => sum + (item.likes || 0), 0) || 0}`, 
+      icon: Award 
+    }
   ];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen relative">
+        <InteractiveBackground />
+        <Navigation />
+        
+        <section className="pt-24 pb-16 px-4 relative z-10">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-16">
+              <h1 className="text-5xl md:text-6xl font-heading font-black leading-tight mb-6">
+                <span className="text-gray-900">Moments That</span>
+                <br />
+                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Define Us
+                </span>
+              </h1>
+            </div>
+            
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+              <span className="ml-2 text-purple-600">Loading gallery...</span>
+            </div>
+          </div>
+        </section>
+        
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen relative">
+        <InteractiveBackground />
+        <Navigation />
+        
+        <section className="pt-24 pb-16 px-4 relative z-10">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-16">
+              <h1 className="text-5xl md:text-6xl font-heading font-black leading-tight mb-6">
+                <span className="text-gray-900">Moments That</span>
+                <br />
+                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Define Us
+                </span>
+              </h1>
+            </div>
+            
+            <div className="text-center py-12">
+              <Image className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 mb-4">Unable to load gallery at this time.</p>
+              <p className="text-gray-500 text-sm">Please check back later or contact us if the problem persists.</p>
+            </div>
+          </div>
+        </section>
+        
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen relative">
@@ -223,7 +232,7 @@ const Gallery = () => {
                   {/* Image placeholder with gradient and overlay */}
                   <div className="relative h-56 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden">
                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 smooth-transition"></div>
-                    {item.featured && (
+                    {item.category === 'featured' && (
                       <div className="absolute top-4 left-4">
                         <Badge className="bg-yellow-500 text-white">Featured</Badge>
                       </div>
@@ -231,7 +240,7 @@ const Gallery = () => {
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center text-white">
                         <Calendar className="h-16 w-16 mx-auto mb-4 opacity-70 group-hover:scale-110 smooth-transition" />
-                        <p className="text-sm opacity-90 font-medium">{item.imageAlt}</p>
+                        <p className="text-sm opacity-90 font-medium">{item.eventName || item.photographer || 'SAINT Gallery'}</p>
                       </div>
                     </div>
                     <div className="absolute bottom-4 left-4 right-4">
@@ -248,8 +257,8 @@ const Gallery = () => {
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm text-gray-600 font-medium">{item.date}</span>
                       <div className="flex items-center text-sm text-gray-600">
-                        <Users className="h-4 w-4 mr-1 text-blue-500" />
-                        {item.participants}
+                        <Eye className="h-4 w-4 mr-1 text-blue-500" />
+                        {item.views} views
                       </div>
                     </div>
                     
@@ -262,15 +271,21 @@ const Gallery = () => {
                     </p>
                     
                     <div className="space-y-1">
-                      {item.highlights.slice(0, 2).map((highlight, highlightIndex) => (
-                        <div key={highlightIndex} className="text-xs text-gray-600 flex items-center">
+                      {item.tags?.slice(0, 2).map((tag, tagIndex) => (
+                        <div key={tagIndex} className="text-xs text-gray-600 flex items-center">
                           <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span>
-                          {highlight}
+                          {tag}
                         </div>
                       ))}
-                      {item.highlights.length > 2 && (
+                      {(item.tags?.length || 0) > 2 && (
                         <div className="text-xs text-blue-600 font-medium">
-                          +{item.highlights.length - 2} more highlights
+                          +{(item.tags?.length || 0) - 2} more tags
+                        </div>
+                      )}
+                      {item.photographer && (
+                        <div className="text-xs text-gray-600 flex items-center mt-2">
+                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></span>
+                          Photo by {item.photographer}
                         </div>
                       )}
                     </div>
@@ -325,7 +340,7 @@ const Gallery = () => {
                   <div className="h-96 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                     <div className="text-center text-white">
                       <Calendar className="h-24 w-24 mx-auto mb-4 opacity-70" />
-                      <p className="text-lg opacity-90 font-medium">{item.imageAlt}</p>
+                      <p className="text-lg opacity-90 font-medium">{item.eventName || item.photographer || 'SAINT Gallery'}</p>
                     </div>
                   </div>
                   
@@ -347,22 +362,36 @@ const Gallery = () => {
                     
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">Event Highlights</h4>
+                        <h4 className="font-semibold text-gray-900 mb-3">Event Tags</h4>
                         <div className="space-y-2">
-                          {item.highlights.map((highlight, index) => (
+                          {item.tags?.map((tag, index) => (
                             <div key={index} className="text-sm text-gray-600 flex items-center">
                               <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
-                              {highlight}
+                              {tag}
                             </div>
-                          ))}
+                          )) || (
+                            <div className="text-sm text-gray-500 italic">No tags available</div>
+                          )}
                         </div>
                       </div>
                       
                       <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">Participation</h4>
-                        <div className="flex items-center text-gray-600">
-                          <Users className="h-5 w-5 mr-2 text-blue-500" />
-                          <span>{item.participants} participants</span>
+                        <h4 className="font-semibold text-gray-900 mb-3">Gallery Stats</h4>
+                        <div className="space-y-2">
+                          <div className="flex items-center text-gray-600">
+                            <Eye className="h-5 w-5 mr-2 text-blue-500" />
+                            <span>{item.views} views</span>
+                          </div>
+                          <div className="flex items-center text-gray-600">
+                            <Heart className="h-5 w-5 mr-2 text-red-500" />
+                            <span>{item.likes} likes</span>
+                          </div>
+                          {item.photographer && (
+                            <div className="flex items-center text-gray-600">
+                              <Users className="h-5 w-5 mr-2 text-green-500" />
+                              <span>Photo by {item.photographer}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

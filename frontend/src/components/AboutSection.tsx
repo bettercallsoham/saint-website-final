@@ -3,8 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Code, Brain, Handshake, Rocket, ArrowRight, Users, Calendar, Award } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useMembers } from "@/hooks/useMembers";
+import { useEvents } from "@/hooks/useEvents";
+import { useGallery } from "@/hooks/useGallery";
 
 const AboutSection = () => {
+  // Fetch data from APIs
+  const { data: members } = useMembers();
+  const { data: events } = useEvents();
+  const { data: gallery } = useGallery();
+
   const features = [
     {
       icon: Code,
@@ -28,10 +36,23 @@ const AboutSection = () => {
     }
   ];
 
+  // Calculate dynamic achievements from API data
   const achievements = [
-    { icon: Users, label: "150+ Members", description: "Active tech enthusiasts" },
-    { icon: Calendar, label: "75+ Events", description: "Workshops & networking" },
-    { icon: Award, label: "25+ Awards", description: "Competition victories" },
+    { 
+      icon: Users, 
+      label: `${members?.length || 0}+ Members`, 
+      description: "Active tech enthusiasts" 
+    },
+    { 
+      icon: Calendar, 
+      label: `${events?.length || 0}+ Events`, 
+      description: "Workshops & networking" 
+    },
+    { 
+      icon: Award, 
+      label: `${gallery?.length || 0}+ Gallery Items`, 
+      description: "Captured moments" 
+    },
   ];
 
   return (

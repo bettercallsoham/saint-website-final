@@ -3,15 +3,27 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Github, Linkedin, Mail, Star, ArrowRight, ExternalLink } from "lucide-react";
+import { Github, Linkedin, Mail, Star, ArrowRight, ExternalLink, Loader2, Users } from "lucide-react";
 import { FloatingElement, CustomArrow } from "@/components/InteractiveElements";
 import InteractiveBackground from "@/components/InteractiveBackground";
 import { useState } from "react";
+import { useMembers } from "@/hooks/useMembers";
 
 const Members = () => {
   const [hoveredMember, setHoveredMember] = useState<number | null>(null);
+  const { data: members, isLoading, error } = useMembers();
 
-  const executiveTeam = [
+  // Separate executive team and regular members
+  const executiveTeam = members?.filter(member => 
+    ['president', 'vice president', 'secretary', 'treasurer', 'technical director', 'events coordinator'].includes(member.position?.toLowerCase())
+  ) || [];
+
+  const regularMembers = members?.filter(member => 
+    !['president', 'vice president', 'secretary', 'treasurer', 'technical director', 'events coordinator'].includes(member.position?.toLowerCase())
+  ) || [];
+
+  // Hardcoded fallback data for when API is not available
+  const fallbackExecutiveTeam = [
     {
       name: "Alex Chen",
       position: "President",
@@ -66,40 +78,95 @@ const Members = () => {
     }
   ];
 
-  const topContributors = [
-    {
-      name: "David Kim",
-      contributions: 47,
-      specialties: ["React", "Node.js", "MongoDB"]
+  // Calculate dynamic member stats from API data
+  const memberStats = [
+    { 
+      label: "Total Members", 
+      value: members?.length?.toString() || "0", 
+      description: "Active student members" 
     },
-    {
-      name: "Lisa Wang",
-      contributions: 42,
-      specialties: ["Python", "Django", "PostgreSQL"]
+    { 
+      label: "Active Members", 
+      value: members?.filter(m => m.isActive)?.length?.toString() || "0", 
+      description: "Currently active" 
     },
-    {
-      name: "James Wilson",
-      contributions: 38,
-      specialties: ["Java", "Spring", "AWS"]
+    { 
+      label: "Executive Team", 
+      value: executiveTeam?.length?.toString() || "0", 
+      description: "Leadership positions" 
     },
-    {
-      name: "Maria Garcia",
-      contributions: 35,
-      specialties: ["Flutter", "Dart", "Firebase"]
-    },
-    {
-      name: "Ryan Patel",
-      contributions: 31,
-      specialties: ["C++", "Algorithms", "System Design"]
+    { 
+      label: "Years & Branches", 
+      value: new Set(members?.map(m => m.year)).size?.toString() || "0", 
+      description: "Diverse backgrounds" 
     }
   ];
 
-  const memberStats = [
-    { label: "Total Members", value: "156", description: "Active student members" },
-    { label: "New This Semester", value: "28", description: "Recently joined" },
-    { label: "Alumni Network", value: "200+", description: "Graduated members" },
-    { label: "Industry Partners", value: "15", description: "Company connections" }
-  ];
+  // Helper function to generate avatar initials
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen relative">
+        <InteractiveBackground />
+        <Navigation />
+        
+        <section className="pt-24 pb-16 px-4 relative z-10">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-16">
+              <h1 className="text-5xl md:text-6xl font-heading font-black leading-tight mb-6">
+                <span className="text-gray-900">Meet the</span>
+                <br />
+                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  SAInT Family
+                </span>
+              </h1>
+            </div>
+            
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <span className="ml-2 text-blue-600">Loading members...</span>
+            </div>
+          </div>
+        </section>
+        
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen relative">
+        <InteractiveBackground />
+        <Navigation />
+        
+        <section className="pt-24 pb-16 px-4 relative z-10">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-16">
+              <h1 className="text-5xl md:text-6xl font-heading font-black leading-tight mb-6">
+                <span className="text-gray-900">Meet the</span>
+                <br />
+                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  SAInT Family
+                </span>
+              </h1>
+            </div>
+            
+            <div className="text-center py-12">
+              <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 mb-4">Unable to load member information at this time.</p>
+              <p className="text-gray-500 text-sm">Please check back later or contact us if the problem persists.</p>
+            </div>
+          </div>
+        </section>
+        
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen relative">
@@ -164,83 +231,115 @@ const Members = () => {
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {executiveTeam.map((member, index) => (
-              <FloatingElement key={index} delay={index * 150}>
-                <Card 
-                  className={`group cursor-pointer smooth-transition hover-shadow bg-white/80 backdrop-blur-sm border-0 shadow-lg overflow-hidden ${
-                    hoveredMember === index ? 'scale-105' : ''
-                  }`}
-                  onMouseEnter={() => setHoveredMember(index)}
-                  onMouseLeave={() => setHoveredMember(null)}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 smooth-transition"></div>
-                  
-                  <CardHeader className="relative z-10 text-center">
-                    <div className="relative mb-4">
-                      <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto flex items-center justify-center shadow-lg group-hover:shadow-xl smooth-transition">
-                        <span className="text-2xl font-bold text-white">
-                          {member.avatar}
-                        </span>
-                      </div>
-                      <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
-                        <div className="w-3 h-3 bg-white rounded-full"></div>
-                      </div>
-                    </div>
+            {executiveTeam.length > 0 ? (
+              executiveTeam.slice(0, 8).map((member, index) => (
+                <FloatingElement key={member.id} delay={index * 150}>
+                  <Card 
+                    className={`group cursor-pointer smooth-transition hover-shadow bg-white/80 backdrop-blur-sm border-0 shadow-lg overflow-hidden ${
+                      hoveredMember === index ? 'scale-105' : ''
+                    }`}
+                    onMouseEnter={() => setHoveredMember(index)}
+                    onMouseLeave={() => setHoveredMember(null)}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 smooth-transition"></div>
                     
-                    <CardTitle className="text-lg text-gray-900 font-heading">{member.name}</CardTitle>
-                    <Badge variant="default" className="mb-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                      {member.position}
-                    </Badge>
-                    <p className="text-sm text-gray-600">{member.year} • {member.major}</p>
-                  </CardHeader>
-                  
-                  <CardContent className="relative z-10">
-                    <p className="text-sm text-gray-700 mb-4 line-clamp-3">{member.bio}</p>
-                    
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs font-semibold text-gray-600">Skills</span>
-                        <span className="text-xs text-gray-500">{member.projects} projects</span>
+                    <CardHeader className="relative z-10 text-center">
+                      <div className="relative mb-4">
+                        {member.profileImage ? (
+                          <img 
+                            src={member.profileImage} 
+                            alt={member.name}
+                            className="w-24 h-24 rounded-full mx-auto object-cover shadow-lg group-hover:shadow-xl smooth-transition"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto flex items-center justify-center shadow-lg group-hover:shadow-xl smooth-transition ${member.profileImage ? 'hidden' : ''}`}>
+                          <span className="text-2xl font-bold text-white">
+                            {getInitials(member.name)}
+                          </span>
+                        </div>
+                        {member.isActive && (
+                          <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                            <div className="w-3 h-3 bg-white rounded-full"></div>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex flex-wrap gap-1">
-                        {member.skills.slice(0, 3).map((skill, skillIndex) => (
-                          <Badge key={skillIndex} variant="outline" className="text-xs bg-gray-50">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
+                      
+                      <CardTitle className="text-lg text-gray-900 font-heading">{member.name}</CardTitle>
+                      <Badge variant="default" className="mb-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                        {member.position}
+                      </Badge>
+                      <p className="text-sm text-gray-600">{member.year} • {member.branch}</p>
+                    </CardHeader>
                     
-                    <div className="flex justify-center space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="p-2 hover:bg-blue-50 group/btn"
-                        onClick={() => window.open(`https://github.com/${member.github}`, '_blank')}
-                      >
-                        <Github className="h-4 w-4 group-hover/btn:text-blue-600 smooth-transition" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="p-2 hover:bg-blue-50 group/btn"
-                        onClick={() => window.open(`https://linkedin.com/in/${member.linkedin}`, '_blank')}
-                      >
-                        <Linkedin className="h-4 w-4 group-hover/btn:text-blue-600 smooth-transition" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="p-2 hover:bg-blue-50 group/btn"
-                        onClick={() => window.open(`mailto:${member.email}`, '_blank')}
-                      >
-                        <Mail className="h-4 w-4 group-hover/btn:text-blue-600 smooth-transition" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </FloatingElement>
-            ))}
+                    <CardContent className="relative z-10">
+                      {member.bio && (
+                        <p className="text-sm text-gray-700 mb-4 line-clamp-3">{member.bio}</p>
+                      )}
+                      
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-xs font-semibold text-gray-600">Skills</span>
+                          <span className="text-xs text-gray-500">ID: {member.studentId}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {member.skills ? (
+                            member.skills.slice(0, 3).map((skill, skillIndex) => (
+                              <Badge key={skillIndex} variant="outline" className="text-xs bg-gray-50">
+                                {skill}
+                              </Badge>
+                            ))
+                          ) : (
+                            <Badge variant="outline" className="text-xs bg-gray-50">
+                              {member.role}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-center space-x-2">
+                        {member.github && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="p-2 hover:bg-blue-50 group/btn"
+                            onClick={() => window.open(`https://github.com/${member.github}`, '_blank')}
+                          >
+                            <Github className="h-4 w-4 group-hover/btn:text-blue-600 smooth-transition" />
+                          </Button>
+                        )}
+                        {member.linkedin && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="p-2 hover:bg-blue-50 group/btn"
+                            onClick={() => window.open(`https://linkedin.com/in/${member.linkedin}`, '_blank')}
+                          >
+                            <Linkedin className="h-4 w-4 group-hover/btn:text-blue-600 smooth-transition" />
+                          </Button>
+                        )}
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="p-2 hover:bg-blue-50 group/btn"
+                          onClick={() => window.open(`mailto:${member.email}`, '_blank')}
+                        >
+                          <Mail className="h-4 w-4 group-hover/btn:text-blue-600 smooth-transition" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </FloatingElement>
+              ))
+            ) : (
+              <div className="col-span-4 text-center py-12">
+                <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No executive team members found.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -261,37 +360,62 @@ const Members = () => {
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
-            {topContributors.map((contributor, index) => (
-              <Card key={index} className="text-center bg-white/80 backdrop-blur-sm border-slate-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 shadow-lg">
-                <CardHeader>
-                  <div className="relative">
-                    <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mx-auto mb-3 flex items-center justify-center shadow-lg">
-                      <span className="text-lg font-bold text-white">
-                        {contributor.name.split(' ').map(n => n[0]).join('')}
-                      </span>
-                    </div>
-                    {index < 3 && (
-                      <div className="absolute -top-2 -right-2">
-                        <Star className="h-6 w-6 text-yellow-400 fill-current drop-shadow-sm" />
+            {regularMembers.length > 0 ? (
+              regularMembers.slice(0, 5).map((member, index) => (
+                <Card key={member.id} className="text-center bg-white/80 backdrop-blur-sm border-slate-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 shadow-lg">
+                  <CardHeader>
+                    <div className="relative">
+                      {member.profileImage ? (
+                        <img 
+                          src={member.profileImage} 
+                          alt={member.name}
+                          className="w-16 h-16 rounded-full mx-auto mb-3 object-cover shadow-lg"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mx-auto mb-3 flex items-center justify-center shadow-lg ${member.profileImage ? 'hidden' : ''}`}>
+                        <span className="text-lg font-bold text-white">
+                          {getInitials(member.name)}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                  <CardTitle className="text-base font-semibold text-slate-800">{contributor.name}</CardTitle>
-                  <div className="flex items-center justify-center text-blue-600 font-semibold">
-                    {contributor.contributions} contributions
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-1 justify-center">
-                    {contributor.specialties.map((tech, techIndex) => (
-                      <Badge key={techIndex} variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
-                        {tech}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      {index < 3 && (
+                        <div className="absolute -top-2 -right-2">
+                          <Star className="h-6 w-6 text-yellow-400 fill-current drop-shadow-sm" />
+                        </div>
+                      )}
+                    </div>
+                    <CardTitle className="text-base font-semibold text-slate-800">{member.name}</CardTitle>
+                    <div className="flex items-center justify-center text-blue-600 font-semibold text-sm">
+                      {member.year} • {member.branch}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-1 justify-center">
+                      {member.skills ? (
+                        member.skills.slice(0, 2).map((skill, techIndex) => (
+                          <Badge key={techIndex} variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
+                            {skill}
+                          </Badge>
+                        ))
+                      ) : (
+                        <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
+                          {member.role}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-5 text-center py-12">
+                <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No active members found.</p>
+                <p className="text-gray-500 text-sm">Check back later for member profiles!</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
