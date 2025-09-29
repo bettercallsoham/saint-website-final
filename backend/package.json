@@ -1,7 +1,7 @@
 {
-  "name": "saint-backend-api",
+  "name": "saint-backend",
   "version": "1.0.0",
-  "description": "Backend API for SAInT - Student Association of Information Technology",
+  "description": "SAInT Backend API Server",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
