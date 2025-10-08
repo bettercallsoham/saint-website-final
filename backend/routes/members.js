@@ -87,10 +87,10 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-// @desc    Get all members
+// @desc    Get all members (public basic info)
 // @route   GET /api/members
-// @access  Private (Admin)
-router.get('/', protect, authorize('admin'), async (req, res) => {
+// @access  Public
+router.get('/', async (req, res) => {
   try {
     const {
       role,
@@ -103,6 +103,64 @@ router.get('/', protect, authorize('admin'), async (req, res) => {
 
     // Build query
     let query = { isActive: true };
+
+    if (role) query.role = role;
+    if (year) query.year = year;
+    if (department) query.department = department;
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { studentId: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    // Pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const members = await User.find(query)
+      .select('name email role year department studentId profileImage bio skills createdAt')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await User.countDocuments(query);
+    const totalPages = Math.ceil(total / parseInt(limit));
+
+    res.json({
+      success: true,
+      count: members.length,
+      total,
+      currentPage: parseInt(page),
+      totalPages,
+      members
+    });
+  } catch (error) {
+    console.error('Get members error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @desc    Get all members (admin view with full details)
+// @route   GET /api/members/admin/all
+// @access  Private (Admin)
+router.get('/admin/all', protect, authorize('admin'), async (req, res) => {
+  try {
+    const {
+      role,
+      year,
+      department,
+      page = 1,
+      limit = 10,
+      search
+    } = req.query;
+
+    // Build query
+    let query = {};
 
     if (role) query.role = role;
     if (year) query.year = year;
@@ -137,7 +195,7 @@ router.get('/', protect, authorize('admin'), async (req, res) => {
       members
     });
   } catch (error) {
-    console.error('Get members error:', error);
+    console.error('Get admin members error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'

@@ -79,6 +79,11 @@ class ApiService {
     const url = `${this.baseURL}${endpoint}`;
     const headers = this.buildHeaders(customHeaders);
 
+    // Log request for debugging in development
+    if (import.meta.env.DEV) {
+      console.log(`[API] ${method} ${url}`, body || '');
+    }
+
     // Create AbortController for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -89,12 +94,29 @@ class ApiService {
         headers,
         body: body ? JSON.stringify(body) : undefined,
         signal: controller.signal,
+        // Add credentials for CORS
+        credentials: 'include',
       });
 
       clearTimeout(timeoutId);
 
       // Parse response
-      const responseData = await response.json();
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch (parseError) {
+        // Handle non-JSON responses
+        responseData = { 
+          success: false, 
+          message: 'Invalid response format',
+          data: await response.text()
+        };
+      }
+
+      // Log response for debugging in development
+      if (import.meta.env.DEV) {
+        console.log(`[API Response] ${response.status}:`, responseData);
+      }
 
       if (!response.ok) {
         throw {
@@ -109,12 +131,27 @@ class ApiService {
     } catch (error) {
       clearTimeout(timeoutId);
 
+      // Log errors in development
+      if (import.meta.env.DEV) {
+        console.error('[API Error]:', error);
+      }
+
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
           throw {
             message: 'Request timeout',
             status: 408,
             error: 'TIMEOUT_ERROR',
+          } as ApiError;
+        }
+
+        // Check for network/connection errors
+        if (error.message.includes('fetch')) {
+          throw {
+            message: 'Unable to connect to server. Please check your connection.',
+            status: 0,
+            error: 'NETWORK_ERROR',
+            details: `Failed to connect to ${this.baseURL}`,
           } as ApiError;
         }
 

@@ -18,7 +18,7 @@ const connectDB = async () => {
       return cached.promise;
     }
 
-    const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://nexusit_db_user:nzORq3lNZbV7qOwZ@cluster0.fwjo5og.mongodb.net/saint-db?retryWrites=true&w=majority&appName=Cluster0';
+    const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://soham:QvBmMZ52P2tiZ99y@cluster01.3lfyigv.mongodb.net/SAInT';
     
     console.log('🔄 Connecting to MongoDB...');
     console.log('MongoDB URI:', mongoURI.replace(/\/\/.*@/, '//***:***@'));

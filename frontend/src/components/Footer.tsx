@@ -1,12 +1,14 @@
-﻿import { Code2, Instagram, Twitter, Linkedin, Mail, Github, Send, MapPin, Phone, Calendar } from "lucide-react";
+﻿import { Code2, Instagram, Twitter, Linkedin, Mail, Github, Send, MapPin, Phone, Calendar, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { useMemberCount } from "@/hooks/useStats";
 
 const Footer = () => {
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [isSubscribing, setIsSubscribing] = useState(false);
+  const { data: memberCount } = useMemberCount();
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +59,19 @@ const Footer = () => {
             <p className="text-gray-300 leading-relaxed max-w-sm">
               Building the future of technology, one student at a time. Join our community of passionate learners, innovators, and future tech leaders.
             </p>
+            
+            {/* Live Member Count */}
+            {memberCount !== undefined && (
+              <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl border border-white/10 backdrop-blur-sm">
+                <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+                  <Users className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div className="text-lg font-bold text-white">{memberCount}+</div>
+                  <div className="text-xs text-gray-400">Active Members</div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Quick Links */}

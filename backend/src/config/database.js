@@ -14,7 +14,7 @@ class DatabaseConnection {
         return;
       }
 
-      const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/saint_database';
+      const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://soham:QvBmMZ52P2tiZ99y@cluster01.3lfyigv.mongodb.net/SAInT';
       
       const options = {
         useNewUrlParser: true,

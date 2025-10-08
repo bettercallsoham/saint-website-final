@@ -14,20 +14,28 @@ export const useProfile = () => {
   return useQuery({
     queryKey: AUTH_QUERY_KEYS.profile,
     queryFn: async () => {
-      const response = await authApi.getTokenInfo();
+      const response = await authApi.getProfile();
       if (!response.success) {
+        // Clear invalid token
+        if (response.error === 'NETWORK_ERROR' || response.message?.includes('401')) {
+          authApi.logout();
+        }
         throw new Error(response.message || 'Failed to fetch profile');
       }
-      return response.data;
+      return response.data || null;
     },
     enabled: authApi.isAuthenticated(),
+    placeholderData: null, // Return null instead of undefined when no data
     retry: (failureCount, error: any) => {
       // Don't retry on authentication errors
       if (error?.status === 401 || error?.status === 403) {
         return false;
       }
-      return failureCount < 3;
+      return failureCount < 2;
     },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: true, // Enable refetch on focus to check auth state
+    refetchOnMount: true, // Always refetch when component mounts
   });
 };
 
@@ -54,8 +62,11 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: (credentials: LoginCredentials) => authApi.login(credentials),
     onSuccess: (data) => {
-      if (data.success) {
-        queryClient.setQueryData(AUTH_QUERY_KEYS.profile, data.data?.user);
+      if (data.success && data.data?.user) {
+        // Set user profile in cache
+        queryClient.setQueryData(AUTH_QUERY_KEYS.profile, data.data.user);
+        // Invalidate profile query to trigger refetch
+        queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.profile });
         toast.success('Login successful!');
       } else {
         toast.error(data.message || 'Login failed');

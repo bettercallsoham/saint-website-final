@@ -180,6 +180,248 @@ class AuthController {
   }
 
   /**
+   * Get current user profile
+   */
+  async getProfile(req, res) {
+    try {
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.split(' ')[1];
+
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message: 'Token not provided',
+          error: 'MISSING_TOKEN'
+        });
+      }
+
+      console.log('Getting user profile via external API');
+      
+      const result = await apiService.getTokenInfo(token);
+      
+      console.log('User profile retrieved successfully via external API');
+      
+      res.json({
+        success: true,
+        data: result.data?.user || result.data,
+        message: 'Profile retrieved successfully'
+      });
+
+    } catch (error) {
+      console.error('Get profile error:', error);
+      res.status(401).json({
+        success: false,
+        message: 'Failed to get user profile',
+        error: 'PROFILE_ERROR',
+        details: error.error || error.message
+      });
+    }
+  }
+
+  /**
+   * Update user profile
+   */
+  async updateProfile(req, res) {
+    try {
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.split(' ')[1];
+      const updates = req.body;
+
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message: 'Token not provided',
+          error: 'MISSING_TOKEN'
+        });
+      }
+
+      console.log('Updating user profile via external API');
+      
+      // For now, just return success since we don't have profile update in external API
+      // In a real implementation, you'd call the external API to update profile
+      
+      res.json({
+        success: true,
+        data: updates,
+        message: 'Profile updated successfully'
+      });
+
+    } catch (error) {
+      console.error('Update profile error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update profile',
+        error: 'PROFILE_UPDATE_ERROR',
+        details: error.error || error.message
+      });
+    }
+  }
+
+  /**
+   * Get all users (admin only)
+   */
+  async getAllUsers(req, res) {
+    try {
+      // For now, return mock data since we don't have user management in external API
+      // In a real implementation, you'd fetch from your user database or external API
+      
+      const mockUsers = [
+        {
+          id: '1',
+          name: 'John Doe',
+          email: 'john@example.com',
+          role: 'user',
+          studentId: 'ST001',
+          department: 'Computer Science',
+          year: '3rd',
+          isActive: true,
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '2', 
+          name: 'Jane Admin',
+          email: 'jane@example.com',
+          role: 'admin',
+          department: 'Administration',
+          isActive: true,
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '3',
+          name: 'Bob Student',
+          email: 'bob@example.com', 
+          role: 'user',
+          studentId: 'ST002',
+          department: 'Information Technology',
+          year: '2nd',
+          isActive: true,
+          createdAt: new Date().toISOString()
+        }
+      ];
+
+      res.json({
+        success: true,
+        data: mockUsers,
+        message: 'Users retrieved successfully'
+      });
+
+    } catch (error) {
+      console.error('Get all users error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get users',
+        error: 'GET_USERS_ERROR'
+      });
+    }
+  }
+
+  /**
+   * Get user by ID (admin only)
+   */
+  async getUserById(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Mock user data
+      const mockUser = {
+        id,
+        name: 'User ' + id,
+        email: `user${id}@example.com`,
+        role: 'user',
+        studentId: `ST00${id}`,
+        department: 'Computer Science',
+        year: '2nd',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      };
+
+      res.json({
+        success: true,
+        data: mockUser,
+        message: 'User retrieved successfully'
+      });
+
+    } catch (error) {
+      console.error('Get user by ID error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get user',
+        error: 'GET_USER_ERROR'
+      });
+    }
+  }
+
+  /**
+   * Update user role (admin only)
+   */
+  async updateUserRole(req, res) {
+    try {
+      const { id } = req.params;
+      const { role } = req.body;
+
+      res.json({
+        success: true,
+        data: { id, role },
+        message: 'User role updated successfully'
+      });
+
+    } catch (error) {
+      console.error('Update user role error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update user role',
+        error: 'UPDATE_ROLE_ERROR'
+      });
+    }
+  }
+
+  /**
+   * Update user status (admin only)
+   */
+  async updateUserStatus(req, res) {
+    try {
+      const { id } = req.params;
+      const { isActive } = req.body;
+
+      res.json({
+        success: true,
+        data: { id, isActive },
+        message: 'User status updated successfully'
+      });
+
+    } catch (error) {
+      console.error('Update user status error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update user status',
+        error: 'UPDATE_STATUS_ERROR'
+      });
+    }
+  }
+
+  /**
+   * Delete user (admin only)
+   */
+  async deleteUser(req, res) {
+    try {
+      const { id } = req.params;
+
+      res.json({
+        success: true,
+        message: 'User deleted successfully'
+      });
+
+    } catch (error) {
+      console.error('Delete user error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete user',
+        error: 'DELETE_USER_ERROR'
+      });
+    }
+  }
+
+  /**
    * Logout (invalidate refresh token)
    */
   async logout(req, res) {

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Eye, EyeOff } from "lucide-react";
+import { useAdminRegister } from "@/hooks/useAuth";
 
 const AdminRegister = () => {
   const [step, setStep] = useState<'verify' | 'register'>('verify');
@@ -20,17 +21,15 @@ const AdminRegister = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const adminRegisterMutation = useAdminRegister();
 
   // Secret admin verification key (in production, this would be environment-based)
   const ADMIN_SECRET = "SAINT_ADMIN_2025_SECURE";
 
   useEffect(() => {
-    // Add some obfuscation - if someone lands here without knowing the route, redirect them
-    const hasAdminIntent = sessionStorage.getItem('admin_intent');
-    if (!hasAdminIntent) {
-      navigate('/register');
-    }
-  }, [navigate]);
+    // Set admin intent when component mounts to allow direct navigation
+    sessionStorage.setItem('admin_intent', 'true');
+  }, []);
 
   const handleSecretVerification = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,28 +63,22 @@ const AdminRegister = () => {
     try {
       // Use the admin registration API
       const adminData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email,
         password: formData.password,
         confirmPassword: formData.confirmPassword,
         adminSecret: ADMIN_SECRET
       };
 
-      // TODO: Implement actual admin registration logic with API call
-      console.log("Admin registration attempt:", adminData);
+      const result = await adminRegisterMutation.mutateAsync(adminData);
       
-      // Simulate API call for now
-      setTimeout(() => {
-        setIsLoading(false);
-        alert("Admin account created successfully!");
+      if (result.success && result.data?.user) {
         sessionStorage.removeItem('admin_verified');
         sessionStorage.removeItem('admin_intent');
-        navigate('/login');
-      }, 1000);
+        navigate('/admin/dashboard');
+      }
     } catch (error) {
-      setIsLoading(false);
-      alert("Failed to create admin account. Please try again.");
+      // Error handling is done by the mutation hook
       console.error("Admin registration error:", error);
     }
   };
@@ -235,9 +228,9 @@ const AdminRegister = () => {
             <Button 
               type="submit" 
               className="w-full bg-red-500 hover:bg-red-600 text-white" 
-              disabled={isLoading}
+              disabled={adminRegisterMutation.isPending}
             >
-              {isLoading ? "Creating Admin Account..." : "Create Administrator Account"}
+              {adminRegisterMutation.isPending ? "Creating Admin Account..." : "Create Administrator Account"}
             </Button>
           </form>
           

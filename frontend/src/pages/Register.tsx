@@ -55,7 +55,8 @@ const Register = () => {
         department: formData.department
       });
       
-      if (result.success) {
+      if (result.success && result.data?.user) {
+        // Redirect to home page after successful registration
         navigate("/");
       }
     } catch (error) {
@@ -179,24 +180,32 @@ const Register = () => {
                   required
                 >
                   <option value="">Select Year</option>
-                  <option value="1">1st Year</option>
-                  <option value="2">2nd Year</option>
-                  <option value="3">3rd Year</option>
-                  <option value="4">4th Year</option>
+                  <option value="1st">1st Year</option>
+                  <option value="2nd">2nd Year</option>
+                  <option value="3rd">3rd Year</option>
+                  <option value="4th">4th Year</option>
                   <option value="Graduate">Graduate</option>
+                  <option value="Alumni">Alumni</option>
                 </select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
-                <Input
+                <select
                   id="department"
                   name="department"
-                  type="text"
-                  placeholder="Computer Science"
                   value={formData.department}
-                  onChange={handleInputChange}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   required
-                />
+                >
+                  <option value="">Select Department</option>
+                  <option value="Computer Science">Computer Science</option>
+                  <option value="Information Technology">Information Technology</option>
+                  <option value="Electronics">Electronics</option>
+                  <option value="Mechanical">Mechanical</option>
+                  <option value="Civil">Civil</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
             </div>
 

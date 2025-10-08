@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema({
   },
   department: {
     type: String,
-    enum: ['Computer Science', 'Information Technology', 'Electronics', 'Mechanical', 'Civil', 'Other']
+    enum: ['Computer Science', 'Information Technology', 'Electronics', 'Mechanical', 'Civil', 'Administration', 'Other']
   },
   skills: [{
     type: String,

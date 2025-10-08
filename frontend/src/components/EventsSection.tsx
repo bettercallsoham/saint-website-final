@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, ArrowRight, Loader2 } from "lucide-react";
+import { Calendar, MapPin, Users, ArrowRight, Loader2, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEvents } from "@/hooks/useEvents";
 import { format } from "date-fns";
@@ -16,7 +16,7 @@ const EventsSection = () => {
     
     if (eventDate < now) return { text: "Completed", variant: "secondary" as const };
     if (event.status === "cancelled") return { text: "Cancelled", variant: "destructive" as const };
-    if (event.registrationRequired && event.maxParticipants && event.currentParticipants >= event.maxParticipants * 0.9) {
+    if (event.capacity && event.registeredCount >= event.capacity * 0.9) {
       return { text: "Filling Fast", variant: "secondary" as const };
     }
     if (eventDate > now) return { text: "Registration Open", variant: "default" as const };
@@ -93,7 +93,7 @@ const EventsSection = () => {
             const statusBadge = getEventStatusBadge(event);
             return (
               <Card 
-                key={event.id} 
+                key={event._id} 
                 className="bg-white/80 backdrop-blur-sm border-slate-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 shadow-lg"
               >
                 <CardHeader>
@@ -116,10 +116,10 @@ const EventsSection = () => {
                       <MapPin className="h-4 w-4 mr-2 text-saint-primary" />
                       {event.location}
                     </div>
-                    {event.maxParticipants && (
+                    {event.capacity && (
                       <div className="flex items-center text-sm text-saint-body">
                         <Users className="h-4 w-4 mr-2 text-saint-primary" />
-                        {event.currentParticipants}/{event.maxParticipants} participants
+                        {event.registeredCount || 0}/{event.capacity} participants
                       </div>
                     )}
                   </div>
@@ -127,9 +127,9 @@ const EventsSection = () => {
                   <Button 
                     className="w-full group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
                     size="sm"
-                    disabled={event.maxParticipants && event.currentParticipants >= event.maxParticipants}
+                    disabled={event.capacity && event.registeredCount >= event.capacity}
                   >
-                    {event.registrationRequired ? "RSVP Now" : "Learn More"}
+                    {event.registrationStatus === 'open' ? "RSVP Now" : "Learn More"}
                     <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </CardContent>
@@ -168,7 +168,7 @@ const EventsSection = () => {
           <div className="grid md:grid-cols-2 gap-6">
             {pastEvents.slice(0, 4).map((event) => (
               <Card 
-                key={event.id} 
+                key={event._id} 
                 className="bg-white border-purple-200 hover:border-purple-300 hover:shadow-xl transition-all duration-300 shadow-lg relative z-10"
               >
                 <CardHeader>
@@ -193,7 +193,7 @@ const EventsSection = () => {
                     </div>
                     <div className="flex items-center text-sm text-slate-700">
                       <Users className="h-4 w-4 mr-2 text-purple-500" />
-                      <span className="font-medium">{event.currentParticipants} participants</span>
+                      <span className="font-medium">{event.registeredCount || 0} participants</span>
                     </div>
                   </div>
                 </CardContent>

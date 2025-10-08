@@ -3,8 +3,11 @@ import { ArrowRight, Users, Calendar, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 import InteractiveBackground from "./InteractiveBackground";
 import { CustomArrow, FloatingElement } from "./InteractiveElements";
+import { useGeneralStats } from "@/hooks/useStats";
 
 const HeroSection = () => {
+  const { data: stats, isLoading: statsLoading } = useGeneralStats();
+
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center pt-20 pb-16 overflow-hidden">
       {/* Interactive Background */}
@@ -53,7 +56,7 @@ const HeroSection = () => {
               </div>
             </div>
 
-            {/* Stats */}
+            {/* Live Stats */}
             <div className="grid grid-cols-3 gap-8 pt-12">
               <div className="text-center group hover-shadow rounded-2xl p-6 smooth-transition bg-white/50 backdrop-blur-sm">
                 <div className="flex items-center justify-center mb-3">
@@ -61,7 +64,9 @@ const HeroSection = () => {
                     <Users className="h-8 w-8 text-white" />
                   </div>
                 </div>
-                <div className="text-3xl font-bold text-gray-900 font-heading">150+</div>
+                <div className="text-3xl font-bold text-gray-900 font-heading">
+                  {statsLoading ? "..." : `${stats?.memberCount || 0}+`}
+                </div>
                 <div className="text-sm text-gray-600 font-medium">Active Members</div>
               </div>
               
@@ -71,7 +76,9 @@ const HeroSection = () => {
                     <Calendar className="h-8 w-8 text-white" />
                   </div>
                 </div>
-                <div className="text-3xl font-bold text-gray-900 font-heading">75+</div>
+                <div className="text-3xl font-bold text-gray-900 font-heading">
+                  {statsLoading ? "..." : `${stats?.totalEvents || 0}+`}
+                </div>
                 <div className="text-sm text-gray-600 font-medium">Events Hosted</div>
               </div>
               
@@ -81,8 +88,10 @@ const HeroSection = () => {
                     <Trophy className="h-8 w-8 text-white" />
                   </div>
                 </div>
-                <div className="text-3xl font-bold text-gray-900 font-heading">25+</div>
-                <div className="text-sm text-gray-600 font-medium">Awards Won</div>
+                <div className="text-3xl font-bold text-gray-900 font-heading">
+                  {statsLoading ? "..." : `${stats?.upcomingEvents || 0}+`}
+                </div>
+                <div className="text-sm text-gray-600 font-medium">Upcoming Events</div>
               </div>
             </div>
           </div>

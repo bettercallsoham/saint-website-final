@@ -23,10 +23,19 @@ const Login = () => {
     }
 
     try {
+      console.log('[Login] Attempting login with:', { email });
       const result = await loginMutation.mutateAsync({ email, password });
-      if (result.success) {
-        // Redirect to home page or dashboard
-        navigate("/");
+      console.log('[Login] Login result:', result);
+      
+      if (result.success && result.data?.user) {
+        // Redirect based on user role
+        if (result.data.user.role === 'admin') {
+          navigate("/admin/dashboard", { replace: true });
+        } else {
+          navigate("/dashboard", { replace: true });
+        }
+      } else {
+        toast.error(result.message || 'Login failed');
       }
     } catch (error) {
       // Error is handled by the useLogin hook

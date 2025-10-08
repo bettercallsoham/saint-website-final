@@ -3,6 +3,7 @@ const eventsController = require('../controllers/eventsController');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const { validateEventCreation, validateMongoId } = require('../middleware/validation');
 const { generalLimiter } = require('../middleware/common');
+const RSVP = require('../../models/RSVP');
 
 const router = express.Router();
 
@@ -43,5 +44,33 @@ router.put('/:id', authenticate, requireAdmin, validateMongoId, validateEventCre
  * @access  Private (Admin only)
  */
 router.delete('/:id', authenticate, requireAdmin, validateMongoId, eventsController.deleteEvent);
+
+/**
+ * @route   GET /api/events/:id/rsvps
+ * @desc    Get RSVPs for a specific event
+ * @access  Private (Admin only)
+ */
+router.get('/:id/rsvps', authenticate, requireAdmin, validateMongoId, async (req, res) => {
+  try {
+    const { id: eventId } = req.params;
+
+    const rsvps = await RSVP.find({ event: eventId })
+      .populate('user', 'name firstName lastName email studentId department year')
+      .populate('event', 'title date location category')
+      .sort({ registrationDate: -1 });
+
+    res.json({
+      success: true,
+      message: 'Event RSVPs retrieved successfully',
+      data: rsvps
+    });
+  } catch (error) {
+    console.error('Get event RSVPs error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while retrieving event RSVPs'
+    });
+  }
+});
 
 module.exports = router;

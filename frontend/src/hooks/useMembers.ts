@@ -10,7 +10,7 @@ export const MEMBERS_QUERY_KEYS = {
 
 // Members Hooks
 
-// Get all members
+// Get all members (public)
 export const useMembers = () => {
   return useQuery({
     queryKey: MEMBERS_QUERY_KEYS.all,
@@ -21,8 +21,36 @@ export const useMembers = () => {
       }
       return response.data || [];
     },
-    retry: 3,
+    retry: (failureCount, error: any) => {
+      // Don't retry on authentication errors
+      if (error?.status === 401 || error?.status === 403) {
+        return false;
+      }
+      return failureCount < 3;
+    },
     staleTime: 10 * 60 * 1000, // 10 minutes (members data changes less frequently)
+  });
+};
+
+// Get all members (admin view with full details)
+export const useMembersAdmin = () => {
+  return useQuery({
+    queryKey: ['members', 'admin'],
+    queryFn: async () => {
+      const response = await membersApi.getAllAdmin();
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch members');
+      }
+      return response.data || [];
+    },
+    retry: (failureCount, error: any) => {
+      // Don't retry on authentication errors
+      if (error?.status === 401 || error?.status === 403) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes for admin data
   });
 };
 

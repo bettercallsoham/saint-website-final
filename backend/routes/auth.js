@@ -11,7 +11,7 @@ const router = express.Router();
 const ensureDBConnection = async () => {
   if (mongoose.connection.readyState !== 1) {
     try {
-      const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://nexusit_db_user:nzORq3lNZbV7qOwZ@cluster0.fwjo5og.mongodb.net/saint-db?retryWrites=true&w=majority&appName=Cluster0';
+      const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://soham:QvBmMZ52P2tiZ99y@cluster01.3lfyigv.mongodb.net/SAInT';
       await mongoose.connect(mongoURI, {
         bufferCommands: false,
         maxPoolSize: 10,
@@ -312,16 +312,18 @@ router.post('/register', [
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        studentId: user.studentId,
-        year: user.year,
-        department: user.department,
-        skills: user.skills
+      data: {
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          studentId: user.studentId,
+          year: user.year,
+          department: user.department,
+          skills: user.skills
+        }
       }
     });
   } catch (error) {
@@ -435,18 +437,20 @@ router.post('/login', [
     res.json({
       success: true,
       message: 'Login successful',
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        studentId: user.studentId,
-        year: user.year,
-        department: user.department,
-        skills: user.skills,
-        profileImage: user.profileImage,
-        lastLogin: user.lastLogin
+      data: {
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          studentId: user.studentId,
+          year: user.year,
+          department: user.department,
+          skills: user.skills,
+          profileImage: user.profileImage,
+          lastLogin: user.lastLogin
+        }
       }
     });
   } catch (error) {
@@ -1461,6 +1465,132 @@ router.get('/admin/stats', protect, authorize('admin'), async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error while retrieving statistics'
+    });
+  }
+});
+
+// @desc    Admin registration with secret key
+// @route   POST /api/auth/admin/register
+// @access  Public (with secret key)
+/**
+ * @swagger
+ * /api/auth/admin/register:
+ *   post:
+ *     summary: Admin registration with secret key
+ *     description: Register a new admin user using a secret key
+ *     tags: [Authentication, Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *               - secretKey
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Admin User
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: admin@example.com
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: AdminPassword123
+ *               secretKey:
+ *                 type: string
+ *                 example: SAINT_ADMIN_2025_SECURE
+ *     responses:
+ *       201:
+ *         description: Admin registered successfully
+ *       400:
+ *         description: Validation error or invalid secret key
+ *       500:
+ *         description: Server error
+ */
+router.post('/admin/register', [
+  body('name').trim().isLength({ min: 2, max: 50 }).withMessage('Name must be between 2 and 50 characters'),
+  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+  body('secretKey').notEmpty().withMessage('Secret key is required')
+], async (req, res) => {
+  try {
+    // Ensure database connection
+    await ensureDBConnection();
+    
+    // Debug logging
+    console.log('Admin registration request body:', req.body);
+    console.log('Admin registration request headers:', req.headers);
+    
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('Admin registration validation errors:', errors.array());
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { name, email, password, secretKey } = req.body;
+
+    // Verify secret key
+    const adminSecretKey = process.env.ADMIN_SECRET_KEY || 'SAINT_ADMIN_2025_SECURE';
+    if (secretKey !== adminSecretKey) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid secret key'
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'User already exists with this email'
+      });
+    }
+
+    // Create admin user
+    const adminUser = await User.create({
+      name,
+      email,
+      password,
+      role: 'admin',
+      isActive: true,
+      department: 'Administration'
+    });
+
+    // Generate token
+    const token = generateToken(adminUser._id);
+
+    res.status(201).json({
+      success: true,
+      message: 'Admin registered successfully',
+      data: {
+        token,
+        user: {
+          id: adminUser._id,
+          name: adminUser.name,
+          email: adminUser.email,
+          role: adminUser.role,
+          department: adminUser.department,
+          isActive: adminUser.isActive
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Admin registration error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during admin registration'
     });
   }
 });

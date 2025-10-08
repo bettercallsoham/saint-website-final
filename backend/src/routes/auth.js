@@ -6,7 +6,7 @@ const {
   validateUserLogin,
   validateTokenRefresh 
 } = require('../middleware/validation');
-const { validateAdminSecret, authenticate } = require('../middleware/auth');
+const { validateAdminSecret, authenticate, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -51,6 +51,62 @@ router.post('/validate', authController.validateToken);
  * @access  Public
  */
 router.get('/token-info', authController.getTokenInfo);
+
+/**
+ * @route   GET /api/auth/me
+ * @desc    Get current user profile
+ * @access  Private
+ */
+router.get('/me', authenticate, authController.getProfile);
+
+/**
+ * @route   GET /api/auth/profile
+ * @desc    Get current user profile (alias for /me)
+ * @access  Private
+ */
+router.get('/profile', authenticate, authController.getProfile);
+
+/**
+ * @route   PUT /api/auth/profile
+ * @desc    Update user profile
+ * @access  Private
+ */
+router.put('/profile', authenticate, authController.updateProfile);
+
+/**
+ * @route   GET /api/auth/admin/users
+ * @desc    Get all users (admin only)
+ * @access  Private (Admin)
+ */
+router.get('/admin/users', authenticate, requireAdmin, authController.getAllUsers);
+
+/**
+ * @route   GET /api/auth/admin/users/:id
+ * @desc    Get user by ID (admin only)
+ * @access  Private (Admin)
+ */
+router.get('/admin/users/:id', authenticate, requireAdmin, authController.getUserById);
+
+/**
+ * @route   PUT /api/auth/admin/users/:id/role
+ * @desc    Update user role (admin only)
+ * @access  Private (Admin)
+ */
+router.put('/admin/users/:id/role', authenticate, requireAdmin, authController.updateUserRole);
+
+/**
+ * @route   PUT /api/auth/admin/users/:id/status
+ * @desc    Update user status (admin only)
+ * @access  Private (Admin)
+ */
+router.put('/admin/users/:id/status', authenticate, requireAdmin, authController.updateUserStatus);
+
+/**
+ * @route   DELETE /api/auth/admin/users/:id
+ * @desc    Delete user (admin only)
+ * @access  Private (Admin)
+ */
+router.delete('/admin/users/:id', authenticate, requireAdmin, authController.deleteUser);
 
 /**
  * @route   POST /api/auth/logout

@@ -1,5 +1,6 @@
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import EventRSVPCard from "@/components/EventRSVPCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -174,86 +175,11 @@ const Events = () => {
           
           <div className="grid lg:grid-cols-2 gap-8 mb-12">
             {upcomingEvents.length > 0 ? (
-              upcomingEvents.slice(0, 4).map((event, index) => {
-                const isFull = event.maxParticipants && event.currentParticipants >= event.maxParticipants;
-                const isFillingFast = event.maxParticipants && event.currentParticipants >= event.maxParticipants * 0.8;
-                
-                return (
-                  <FloatingElement key={event.id} delay={index * 200}>
-                    <Card className="overflow-hidden hover-shadow smooth-transition group bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-                      <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 relative overflow-hidden">
-                        {event.imageUrl && (
-                          <img 
-                            src={event.imageUrl} 
-                            alt={event.title}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        )}
-                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 smooth-transition"></div>
-                        <div className="absolute bottom-4 left-4 right-4">
-                          <Badge 
-                            variant={getStatusColor(event.status)}
-                            className="mb-2"
-                          >
-                            {getStatusText(event.status, event.currentParticipants, event.maxParticipants)}
-                          </Badge>
-                          <h3 className="text-2xl font-bold text-white mb-2">{event.title}</h3>
-                        </div>
-                      </div>
-                      
-                      <CardContent className="p-6">
-                        <p className="text-gray-700 mb-4">{event.description}</p>
-                        
-                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-2 text-blue-500" />
-                            {format(new Date(event.date), 'MMM d')}
-                          </div>
-                          <div className="flex items-center">
-                            <Clock className="h-4 w-4 mr-2 text-blue-500" />
-                            {event.time}
-                          </div>
-                          <div className="flex items-center">
-                            <MapPin className="h-4 w-4 mr-2 text-blue-500" />
-                            {event.location}
-                          </div>
-                          <div className="flex items-center">
-                            <Users className="h-4 w-4 mr-2 text-blue-500" />
-                            {event.maxParticipants 
-                              ? `${event.currentParticipants}/${event.maxParticipants}`
-                              : `${event.currentParticipants} registered`
-                            }
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          <Badge variant="outline" className="text-xs bg-gray-50">
-                            {event.category}
-                          </Badge>
-                          {event.organizer && (
-                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                              {event.organizer}
-                            </Badge>
-                          )}
-                        </div>
-
-                        <Button 
-                          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl font-semibold group"
-                          disabled={isFull || event.status === 'cancelled'}
-                        >
-                          {isFull ? 'Registration Full' : 
-                           event.status === 'cancelled' ? 'Cancelled' :
-                           event.registrationRequired ? 'Register Now' : 'Learn More'}
-                          <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 smooth-transition" />
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </FloatingElement>
-                );
-              })
+              upcomingEvents.slice(0, 4).map((event, index) => (
+                <FloatingElement key={event._id} delay={index * 200}>
+                  <EventRSVPCard event={event} />
+                </FloatingElement>
+              ))
             ) : (
               <div className="col-span-2 text-center py-12">
                 <CalendarDays className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -280,7 +206,7 @@ const Events = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {pastEvents.length > 0 ? (
               pastEvents.slice(0, 6).map((event) => (
-                <div key={event.id} className="bg-white border-2 border-purple-300 rounded-xl shadow-xl hover:shadow-2xl hover:border-purple-400 transition-all duration-300 overflow-hidden">
+                <div key={event._id} className="bg-white border-2 border-purple-300 rounded-xl shadow-xl hover:shadow-2xl hover:border-purple-400 transition-all duration-300 overflow-hidden">
                   <div className="p-6">
                     <Badge className="mb-3 bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border border-purple-300">
                       Completed
@@ -294,7 +220,7 @@ const Events = () => {
                       </div>
                       <div className="flex items-center text-gray-900 font-semibold">
                         <Users className="h-5 w-5 mr-2 text-purple-600" />
-                        <span>{event.currentParticipants} attended</span>
+                        <span>{event.registeredCount || 0} attended</span>
                       </div>
                     </div>
                   </div>

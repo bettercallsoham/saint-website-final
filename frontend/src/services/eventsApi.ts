@@ -3,19 +3,34 @@ import { API_ENDPOINTS } from '../config/api';
 
 // Event Types
 export interface Event {
-  id: string;
+  _id: string;
   title: string;
   description: string;
   date: string;
   time: string;
   location: string;
-  imageUrl?: string;
-  registrationRequired: boolean;
-  maxParticipants?: number;
-  currentParticipants: number;
   category: string;
-  organizer: string;
+  capacity: number;
+  registeredCount: number;
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+  registrationStatus: 'open' | 'closed' | 'waitlist';
+  price: number;
+  isFree: boolean;
+  requirements: string[];
+  highlights: string[];
+  tags: string[];
+  images: string[];
+  isFeatured: boolean;
+  isActive: boolean;
+  speaker?: {
+    name: string;
+    role: string;
+    bio?: string;
+    image?: string;
+  };
+  createdBy: string;
+  registeredUsers: string[];
+  waitlistUsers: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -41,7 +56,28 @@ export interface UpdateEventData extends Partial<CreateEventData> {
 export const eventsApi = {
   // Get all events
   getAll: async (): Promise<ApiResponse<Event[]>> => {
-    return apiService.get<Event[]>(API_ENDPOINTS.EVENTS.GET_ALL);
+    const response = await apiService.get<{
+      success: boolean;
+      count: number;
+      total: number;
+      currentPage: number;
+      totalPages: number;
+      events: Event[];
+    }>(API_ENDPOINTS.EVENTS.GET_ALL);
+    
+    if (response.success && response.data) {
+      return {
+        success: true,
+        data: response.data.events,
+        message: response.message
+      };
+    }
+    
+    return {
+      success: false,
+      data: [],
+      message: response.message || 'Failed to fetch events'
+    };
   },
 
   // Get single event by ID

@@ -1,6 +1,36 @@
 import apiService, { ApiResponse } from './apiService';
 import { API_ENDPOINTS } from '../config/api';
 
+// Helper functions for data transformation
+const mapYearToBackend = (year: string): string => {
+  const yearMap: { [key: string]: string } = {
+    '1': '1st',
+    '2': '2nd',
+    '3': '3rd',
+    '4': '4th',
+    'Graduate': 'Graduate',
+    'Alumni': 'Alumni',
+  };
+  return yearMap[year] || year;
+};
+
+const mapDepartmentToBackend = (department: string): string => {
+  const departmentMap: { [key: string]: string } = {
+    'IT': 'Information Technology',
+    'CS': 'Computer Science',
+    'ECE': 'Electronics',
+    'MECH': 'Mechanical',
+    'CIVIL': 'Civil',
+    'Information Technology': 'Information Technology',
+    'Computer Science': 'Computer Science',
+    'Electronics': 'Electronics',
+    'Mechanical': 'Mechanical',
+    'Civil': 'Civil',
+    'Other': 'Other',
+  };
+  return departmentMap[department] || 'Other';
+};
+
 // Auth Types
 export interface LoginCredentials {
   email: string;
@@ -19,8 +49,7 @@ export interface RegisterData {
 }
 
 export interface AdminRegisterData {
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -29,8 +58,9 @@ export interface AdminRegisterData {
 
 export interface User {
   id: string;
-  firstName: string;
-  lastName: string;
+  name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   role: 'user' | 'admin';
   studentId?: string;
@@ -81,7 +111,17 @@ export const authApi = {
 
   // Register user
   register: async (userData: RegisterData): Promise<ApiResponse<AuthResponse>> => {
-    const response = await apiService.post<AuthResponse>(API_ENDPOINTS.AUTH.REGISTER, userData);
+    // Transform data to match backend expectations
+    const transformedData = {
+      name: `${userData.firstName} ${userData.lastName}`.trim(),
+      email: userData.email,
+      password: userData.password,
+      studentId: userData.studentId,
+      year: mapYearToBackend(userData.year),
+      department: mapDepartmentToBackend(userData.department),
+    };
+
+    const response = await apiService.post<AuthResponse>(API_ENDPOINTS.AUTH.REGISTER, transformedData);
     
     // Store token if registration successful
     if (response.success && response.data?.token) {
@@ -93,10 +133,15 @@ export const authApi = {
 
   // Register admin
   adminRegister: async (adminData: AdminRegisterData): Promise<ApiResponse<AuthResponse>> => {
-    const response = await apiService.post<AuthResponse>(API_ENDPOINTS.AUTH.REGISTER, {
-      ...adminData,
-      isAdmin: true,
-    });
+    // Transform data to match backend expectations
+    const transformedData = {
+      name: adminData.name,
+      email: adminData.email,
+      password: adminData.password,
+      secretKey: adminData.adminSecret
+    };
+
+    const response = await apiService.post<AuthResponse>(API_ENDPOINTS.AUTH.ADMIN_REGISTER, transformedData);
     
     // Store token if registration successful
     if (response.success && response.data?.token) {
@@ -142,6 +187,7 @@ export const authApi = {
 
   // Check if user is authenticated
   isAuthenticated: (): boolean => {
-    return apiService['getAuthToken']() !== null;
+    const token = localStorage.getItem('auth_token');
+    return token !== null && token !== '';
   },
 };

@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const mongoose = require('mongoose');
 // const swaggerUi = require('swagger-ui-express'); // Using custom implementation for Vercel
 require('dotenv').config();
 

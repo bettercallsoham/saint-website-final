@@ -42,6 +42,14 @@ export type {
   CreateGalleryItemData,
 } from './galleryApi';
 
+// Users API
+export { usersApi } from './usersApi';
+export type { User as UserProfile } from './usersApi';
+
+// RSVP API
+export { rsvpApi } from './rsvpApi';
+export type { RSVP } from './rsvpApi';
+
 // Database API
 export { databaseApi } from './databaseApi';
 export type {
@@ -55,6 +63,8 @@ import { eventsApi } from './eventsApi';
 import { membersApi } from './membersApi';
 import { contactApi } from './contactApi';
 import { galleryApi } from './galleryApi';
+import { usersApi } from './usersApi';
+import { rsvpApi } from './rsvpApi';
 import { databaseApi } from './databaseApi';
 
 // Combined API object for convenience
@@ -64,5 +74,7 @@ export const api = {
   members: membersApi,
   contact: contactApi,
   gallery: galleryApi,
+  users: usersApi,
+  rsvp: rsvpApi,
   database: databaseApi,
 };

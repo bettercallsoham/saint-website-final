@@ -11,6 +11,7 @@ const membersRoutes = require('./routes/members');
 const contactRoutes = require('./routes/contact');
 const galleryRoutes = require('./routes/gallery');
 const databaseRoutes = require('./routes/database');
+const rsvpRoutes = require('./routes/rsvps');
 
 const app = express();
 
@@ -51,6 +52,7 @@ app.use('/api/members', membersRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/database', databaseRoutes);
+app.use('/api/rsvps', rsvpRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
