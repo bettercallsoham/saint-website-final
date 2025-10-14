@@ -7,19 +7,30 @@ import { Github, Linkedin, Mail, Star, ArrowRight, ExternalLink, Loader2, Users 
 import { FloatingElement, CustomArrow } from "@/components/InteractiveElements";
 import InteractiveBackground from "@/components/InteractiveBackground";
 import { useState } from "react";
-import { useMembers } from "@/hooks/useMembers";
+import { useMembers, useCoreTeamMembers } from "@/hooks/useMembers";
 
 const Members = () => {
   const [hoveredMember, setHoveredMember] = useState<number | null>(null);
-  const { data: members, isLoading, error } = useMembers();
+  const { data: members, isLoading: isLoadingMembers, error: membersError } = useMembers();
+  const { data: coreTeamMembers, isLoading: isLoadingCoreTeam, error: coreTeamError } = useCoreTeamMembers();
 
-  // Separate executive team and regular members
-  const executiveTeam = members?.filter(member => 
-    ['president', 'vice president', 'secretary', 'treasurer', 'technical director', 'events coordinator'].includes(member.position?.toLowerCase())
+  const isLoading = isLoadingMembers || isLoadingCoreTeam;
+  const error = membersError || coreTeamError;
+
+  // Separate core team by designation hierarchy
+  const executivePositions = ['President', 'Vice-President', 'Faculty Advisor', 'Director Administration', 'Secretary', 'Treasurer'];
+  const executiveTeam = coreTeamMembers?.filter(member => 
+    executivePositions.includes(member.designation || member.position)
   ) || [];
 
+  // Other core team members (non-executive positions)
+  const otherCoreMembers = coreTeamMembers?.filter(member => 
+    !executivePositions.includes(member.designation || member.position)
+  ) || [];
+
+  // Regular members (from User model)
   const regularMembers = members?.filter(member => 
-    !['president', 'vice president', 'secretary', 'treasurer', 'technical director', 'events coordinator'].includes(member.position?.toLowerCase())
+    !['admin'].includes(member.role?.toLowerCase())
   ) || [];
 
   // Hardcoded fallback data for when API is not available
@@ -79,16 +90,17 @@ const Members = () => {
   ];
 
   // Calculate dynamic member stats from API data
+  const totalMembers = (members?.length || 0) + (coreTeamMembers?.length || 0);
   const memberStats = [
     { 
       label: "Total Members", 
-      value: members?.length?.toString() || "0", 
+      value: totalMembers.toString(), 
       description: "Active student members" 
     },
     { 
-      label: "Active Members", 
-      value: members?.filter(m => m.isActive)?.length?.toString() || "0", 
-      description: "Currently active" 
+      label: "Core Team", 
+      value: coreTeamMembers?.length?.toString() || "0", 
+      description: "Leadership & committee" 
     },
     { 
       label: "Executive Team", 
@@ -96,9 +108,9 @@ const Members = () => {
       description: "Leadership positions" 
     },
     { 
-      label: "Years & Branches", 
-      value: new Set(members?.map(m => m.year)).size?.toString() || "0", 
-      description: "Diverse backgrounds" 
+      label: "Active Members", 
+      value: members?.filter(m => m.isActive)?.length?.toString() || "0", 
+      description: "Regular members" 
     }
   ];
 
@@ -230,9 +242,9 @@ const Members = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {executiveTeam.length > 0 ? (
-              executiveTeam.slice(0, 8).map((member, index) => (
+              executiveTeam.map((member, index) => (
                 <FloatingElement key={member.id} delay={index * 150}>
                   <Card 
                     className={`group cursor-pointer smooth-transition hover-shadow bg-white/80 backdrop-blur-sm border-0 shadow-lg overflow-hidden ${
@@ -261,18 +273,15 @@ const Members = () => {
                             {getInitials(member.name)}
                           </span>
                         </div>
-                        {member.isActive && (
-                          <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
-                            <div className="w-3 h-3 bg-white rounded-full"></div>
-                          </div>
-                        )}
                       </div>
                       
-                      <CardTitle className="text-lg text-gray-900 font-heading">{member.name}</CardTitle>
-                      <Badge variant="default" className="mb-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                        {member.position}
-                      </Badge>
-                      <p className="text-sm text-gray-600">{member.year} • {member.branch}</p>
+                      <CardTitle className="text-lg text-gray-900 font-heading mb-2">{member.name}</CardTitle>
+                      <div className="flex justify-center mb-3">
+                        <Badge variant="default" className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                          {member.designation || member.position}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 text-center">{member.year} - {member.branch}</p>
                     </CardHeader>
                     
                     <CardContent className="relative z-10">
@@ -286,7 +295,7 @@ const Members = () => {
                           <span className="text-xs text-gray-500">ID: {member.studentId}</span>
                         </div>
                         <div className="flex flex-wrap gap-1">
-                          {member.skills ? (
+                          {member.skills && member.skills.length > 0 ? (
                             member.skills.slice(0, 3).map((skill, skillIndex) => (
                               <Badge key={skillIndex} variant="outline" className="text-xs bg-gray-50">
                                 {skill}
@@ -294,7 +303,7 @@ const Members = () => {
                             ))
                           ) : (
                             <Badge variant="outline" className="text-xs bg-gray-50">
-                              {member.role}
+                              {member.designation || member.role}
                             </Badge>
                           )}
                         </div>
@@ -321,21 +330,23 @@ const Members = () => {
                             <Linkedin className="h-4 w-4 group-hover/btn:text-blue-600 smooth-transition" />
                           </Button>
                         )}
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="p-2 hover:bg-blue-50 group/btn"
-                          onClick={() => window.open(`mailto:${member.email}`, '_blank')}
-                        >
-                          <Mail className="h-4 w-4 group-hover/btn:text-blue-600 smooth-transition" />
-                        </Button>
+                        {member.email && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="p-2 hover:bg-blue-50 group/btn"
+                            onClick={() => window.open(`mailto:${member.email}`, '_blank')}
+                          >
+                            <Mail className="h-4 w-4 group-hover/btn:text-blue-600 smooth-transition" />
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
                 </FloatingElement>
               ))
             ) : (
-              <div className="col-span-4 text-center py-12">
+              <div className="col-span-3 text-center py-12">
                 <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600">No executive team members found.</p>
               </div>
@@ -344,24 +355,24 @@ const Members = () => {
         </div>
       </section>
 
-      {/* Top Contributors */}
+      {/* Core Team Members */}
       <section className="py-16 px-4 bg-gradient-to-br from-slate-50 to-blue-50 relative">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
             <Badge variant="outline" className="mb-4 bg-white/50 border-blue-200 text-blue-700">
-              Community Leaders
+              Core Team
             </Badge>
             <h2 className="text-4xl font-heading font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-              Top Contributors
+              Team Members
             </h2>
             <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-              Recognizing our most active and engaged community members.
+              Dedicated team members working behind the scenes to make SAInT successful.
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6">
-            {regularMembers.length > 0 ? (
-              regularMembers.slice(0, 5).map((member, index) => (
+          <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {otherCoreMembers.length > 0 ? (
+              otherCoreMembers.map((member, index) => (
                 <Card key={member.id} className="text-center bg-white/80 backdrop-blur-sm border-slate-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 shadow-lg">
                   <CardHeader>
                     <div className="relative">
@@ -381,28 +392,28 @@ const Members = () => {
                           {getInitials(member.name)}
                         </span>
                       </div>
-                      {index < 3 && (
-                        <div className="absolute -top-2 -right-2">
-                          <Star className="h-6 w-6 text-yellow-400 fill-current drop-shadow-sm" />
-                        </div>
-                      )}
                     </div>
                     <CardTitle className="text-base font-semibold text-slate-800">{member.name}</CardTitle>
-                    <div className="flex items-center justify-center text-blue-600 font-semibold text-sm">
-                      {member.year} • {member.branch}
+                    <div className="flex justify-center mb-2">
+                      <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 text-xs">
+                        {member.designation || member.position}
+                      </Badge>
+                    </div>
+                    <div className="text-center text-blue-600 font-semibold text-sm">
+                      {member.year} - {member.branch}
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-1 justify-center">
-                      {member.skills ? (
+                      {member.skills && member.skills.length > 0 ? (
                         member.skills.slice(0, 2).map((skill, techIndex) => (
-                          <Badge key={techIndex} variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
+                          <Badge key={techIndex} variant="outline" className="text-xs bg-gray-50 border-gray-200 text-gray-700">
                             {skill}
                           </Badge>
                         ))
                       ) : (
-                        <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
-                          {member.role}
+                        <Badge variant="outline" className="text-xs bg-gray-50 border-gray-200 text-gray-700">
+                          Team Member
                         </Badge>
                       )}
                     </div>
@@ -410,15 +421,68 @@ const Members = () => {
                 </Card>
               ))
             ) : (
-              <div className="col-span-5 text-center py-12">
+              <div className="col-span-4 text-center py-12">
                 <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No active members found.</p>
-                <p className="text-gray-500 text-sm">Check back later for member profiles!</p>
+                <p className="text-gray-600">No core team members found.</p>
+                <p className="text-gray-500 text-sm">Check back later for team profiles!</p>
               </div>
             )}
           </div>
         </div>
       </section>
+
+      {/* Regular Members */}
+      {regularMembers.length > 0 && (
+        <section className="py-16 px-4 relative z-10">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-12">
+              <Badge variant="outline" className="mb-4 bg-white/80 backdrop-blur-sm">
+                Community Members
+              </Badge>
+              <h2 className="text-4xl font-heading font-bold text-gray-900 mb-4">Active Members</h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Our growing community of passionate tech enthusiasts.
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {regularMembers.slice(0, 8).map((member, index) => (
+                <Card key={member.id} className="text-center bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                  <CardHeader>
+                    <div className="relative">
+                      {member.profileImage ? (
+                        <img 
+                          src={member.profileImage} 
+                          alt={member.name}
+                          className="w-16 h-16 rounded-full mx-auto mb-3 object-cover shadow-lg"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-16 h-16 bg-gradient-to-r from-gray-400 to-gray-600 rounded-full mx-auto mb-3 flex items-center justify-center shadow-lg ${member.profileImage ? 'hidden' : ''}`}>
+                        <span className="text-lg font-bold text-white">
+                          {getInitials(member.name)}
+                        </span>
+                      </div>
+                    </div>
+                    <CardTitle className="text-base font-semibold text-gray-800">{member.name}</CardTitle>
+                    <div className="text-center text-gray-600 font-semibold text-sm">
+                      {member.year} - {member.branch}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Badge variant="outline" className="text-xs bg-gray-50 border-gray-200 text-gray-700">
+                      {member.role || 'Member'}
+                    </Badge>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Join Us Section */}
       <section className="py-16 px-4 relative z-10">

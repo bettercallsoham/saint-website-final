@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 // Query Keys
 export const MEMBERS_QUERY_KEYS = {
   all: ['members'] as const,
+  coreTeam: ['members', 'core-team'] as const,
   detail: (id: string) => ['members', id] as const,
 } as const;
 
@@ -27,6 +28,25 @@ export const useMembers = () => {
     },
     retry: 3,
     staleTime: 10 * 60 * 1000, // 10 minutes (members data changes less frequently)
+  });
+};
+
+// Get core team members
+export const useCoreTeamMembers = () => {
+  return useQuery({
+    queryKey: MEMBERS_QUERY_KEYS.coreTeam,
+    queryFn: async () => {
+      const response = await membersApi.getCoreTeam();
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to fetch core team members');
+      }
+      // Extract the members array from the response
+      const membersData = response.data?.members || [];
+      // Ensure we return an array
+      return Array.isArray(membersData) ? membersData : [];
+    },
+    retry: 3,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 

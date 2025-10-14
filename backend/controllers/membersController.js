@@ -1,28 +1,102 @@
 const User = require('../models/User');
+const Member = require('../models/Member');
 
-// Get all members
+// Get all members (combination of Users and Core Team Members)
 const getAllMembers = async (req, res) => {
   try {
-    const { year, department, limit, page } = req.query;
+    const { year, designation, limit, page, coreTeamOnly } = req.query;
     
-    let query = { isActive: true };
+    if (coreTeamOnly === 'true') {
+      // Get core team members only
+      let query = { isActive: true, isCoreTeam: true };
+      
+      // Add filters
+      if (year) query.year = year;
+      if (designation) query.designation = designation;
+      
+      // Pagination
+      const pageNum = parseInt(page) || 1;
+      const limitNum = parseInt(limit) || 50;
+      const skip = (pageNum - 1) * limitNum;
+      
+      const members = await Member.find(query)
+        .sort({ displayOrder: 1, name: 1 })
+        .skip(skip)
+        .limit(limitNum);
+      
+      const total = await Member.countDocuments(query);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Core team members retrieved successfully',
+        data: {
+          members: members.map(member => ({
+            id: member._id,
+            _id: member._id,
+            name: member.name,
+            position: member.designation,
+            designation: member.designation,
+            year: member.year,
+            branch: member.branch,
+            bio: member.bio,
+            profileImage: member.profileImage,
+            skills: member.skills,
+            github: member.github,
+            linkedin: member.linkedin,
+            email: member.email,
+            phoneNumber: member.phoneNumber,
+            isActive: member.isActive,
+            role: member.designation,
+            studentId: `SAINT-${member.displayOrder.toString().padStart(3, '0')}`
+          })),
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total,
+            pages: Math.ceil(total / limitNum)
+          }
+        }
+      });
+    }
     
-    // Add filters
-    if (year) query.year = year;
-    if (department) query.department = department;
+    // Get regular user members
+    let userQuery = { isActive: true };
+    
+    // Add filters for users
+    if (year) userQuery.year = year;
+    if (designation) userQuery.department = designation; // Map designation to department for users
     
     // Pagination
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 20;
     const skip = (pageNum - 1) * limitNum;
     
-    const members = await User.find(query)
-      .select('name email phoneNumber studentId department year joinedAt profilePicture')
+    const users = await User.find(userQuery)
+      .select('name email phoneNumber studentId department year joinedAt profilePicture role')
       .sort({ joinedAt: -1 })
       .skip(skip)
       .limit(limitNum);
     
-    const total = await User.countDocuments(query);
+    const total = await User.countDocuments(userQuery);
+    
+    // Format users to match expected structure
+    const members = users.map(user => ({
+      id: user._id,
+      _id: user._id,
+      name: user.name,
+      position: user.role || 'Member',
+      designation: user.role || 'Member',
+      year: user.year,
+      branch: user.department,
+      bio: `${user.name} is a ${user.year} student in ${user.department}`,
+      profileImage: user.profilePicture,
+      skills: ['Technology', 'Innovation'],
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      isActive: user.isActive,
+      role: user.role || 'Member',
+      studentId: user.studentId
+    }));
     
     res.status(200).json({
       success: true,
@@ -120,10 +194,61 @@ const deleteMember = async (req, res) => {
   }
 };
 
+// Get core team members
+const getCoreTeamMembers = async (req, res) => {
+  try {
+    const { designation } = req.query;
+    
+    let query = { isActive: true, isCoreTeam: true };
+    
+    // Add designation filter
+    if (designation) query.designation = designation;
+    
+    const coreTeam = await Member.find(query)
+      .sort({ displayOrder: 1, name: 1 });
+    
+    res.status(200).json({
+      success: true,
+      message: 'Core team members retrieved successfully',
+      data: {
+        members: coreTeam.map(member => ({
+          id: member._id,
+          _id: member._id,
+          name: member.name,
+          position: member.designation,
+          designation: member.designation,
+          year: member.year,
+          branch: member.branch,
+          bio: member.bio,
+          profileImage: member.profileImage,
+          skills: member.skills,
+          github: member.github,
+          linkedin: member.linkedin,
+          email: member.email,
+          phoneNumber: member.phoneNumber,
+          isActive: member.isActive,
+          role: member.designation,
+          studentId: `SAINT-${member.displayOrder.toString().padStart(3, '0')}`,
+          displayOrder: member.displayOrder
+        })),
+        total: coreTeam.length
+      }
+    });
+  } catch (error) {
+    console.error('Get core team error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving core team members',
+      error: 'GET_CORE_TEAM_ERROR'
+    });
+  }
+};
+
 // Get member statistics (Admin only)
 const getMemberStats = async (req, res) => {
   try {
-    const stats = await User.aggregate([
+    // Get user stats
+    const userStats = await User.aggregate([
       { $match: { isActive: true } },
       {
         $group: {
@@ -151,6 +276,29 @@ const getMemberStats = async (req, res) => {
       }
     ]);
 
+    // Get core team stats
+    const coreTeamStats = await Member.aggregate([
+      { $match: { isActive: true, isCoreTeam: true } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          byDesignation: {
+            $push: {
+              designation: '$designation',
+              count: 1
+            }
+          },
+          byYear: {
+            $push: {
+              year: '$year',
+              count: 1
+            }
+          }
+        }
+      }
+    ]);
+
     // Get recent joiners (last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -161,17 +309,26 @@ const getMemberStats = async (req, res) => {
     });
 
     // Process the aggregated data
-    const result = stats[0] || { total: 0, byYear: [], byDepartment: [], byRole: [] };
+    const userResult = userStats[0] || { total: 0, byYear: [], byDepartment: [], byRole: [] };
+    const coreTeamResult = coreTeamStats[0] || { total: 0, byDesignation: [], byYear: [] };
     
     res.status(200).json({
       success: true,
       message: 'Member statistics retrieved successfully',
       data: {
-        total: result.total,
+        totalUsers: userResult.total,
+        totalCoreTeam: coreTeamResult.total,
+        totalMembers: userResult.total + coreTeamResult.total,
         recentJoiners,
-        byYear: result.byYear,
-        byDepartment: result.byDepartment,
-        byRole: result.byRole
+        users: {
+          byYear: userResult.byYear,
+          byDepartment: userResult.byDepartment,
+          byRole: userResult.byRole
+        },
+        coreTeam: {
+          byDesignation: coreTeamResult.byDesignation,
+          byYear: coreTeamResult.byYear
+        }
       }
     });
   } catch (error) {
@@ -188,5 +345,6 @@ module.exports = {
   getAllMembers,
   getMemberById,
   deleteMember,
-  getMemberStats
+  getMemberStats,
+  getCoreTeamMembers
 };

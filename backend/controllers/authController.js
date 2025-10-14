@@ -162,13 +162,29 @@ const login = async (req, res) => {
       });
     }
 
-    // Check if account is active
-    if (!user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: 'Account is deactivated',
-        error: 'ACCOUNT_DEACTIVATED'
-      });
+    // Check if user can login (active and not banned)
+    if (!user.canLogin()) {
+      if (!user.isActive) {
+        return res.status(401).json({
+          success: false,
+          message: 'Account is deactivated',
+          error: 'ACCOUNT_DEACTIVATED'
+        });
+      }
+      if (user.status === 'banned') {
+        return res.status(401).json({
+          success: false,
+          message: 'Account has been banned. Please contact administrator.',
+          error: 'ACCOUNT_BANNED'
+        });
+      }
+      if (user.status === 'suspended') {
+        return res.status(401).json({
+          success: false,
+          message: 'Account is temporarily suspended',
+          error: 'ACCOUNT_SUSPENDED'
+        });
+      }
     }
 
     // Compare password

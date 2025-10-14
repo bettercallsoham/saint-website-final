@@ -1,0 +1,15 @@
+<!-- This is a simple placeholder. For actual use, generate the JPG using generate-thumbnail.html -->
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1920" height="1080" fill="url(#paint0_linear)"/>
+  <circle cx="960" cy="540" r="80" fill="rgba(255,255,255,0.2)"/>
+  <path d="M 940 520 L 940 560 L 980 540 Z" fill="white"/>
+  <text x="960" y="680" text-anchor="middle" fill="white" font-family="Arial" font-size="48" font-weight="bold">SAInT Club</text>
+  <text x="960" y="720" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-family="Arial" font-size="24">Introduction Video</text>
+  <defs>
+    <linearGradient id="paint0_linear" x1="0" y1="0" x2="1920" y2="1080" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1e40af"/>
+      <stop offset="0.5" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+</svg>

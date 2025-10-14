@@ -36,24 +36,7 @@ const AboutSection = () => {
     }
   ];
 
-  // Calculate dynamic achievements from API data
-  const achievements = [
-    { 
-      icon: Users, 
-      label: `${members?.length || 0}+ Members`, 
-      description: "Active tech enthusiasts" 
-    },
-    { 
-      icon: Calendar, 
-      label: `${events?.length || 0}+ Events`, 
-      description: "Workshops & networking" 
-    },
-    { 
-      icon: Award, 
-      label: `${gallery?.length || 0}+ Gallery Items`, 
-      description: "Captured moments" 
-    },
-  ];
+
 
   return (
     <section id="about" className="py-12 bg-gradient-to-br from-slate-50 to-blue-50 relative">
@@ -89,21 +72,7 @@ const AboutSection = () => {
           </Card>
         </div>
 
-        {/* Achievements Row */}
-        <div className="grid grid-cols-3 gap-6 mb-8">
-          {achievements.map((achievement, index) => {
-            const IconComponent = achievement.icon;
-            return (
-              <div key={index} className="text-center p-6 bg-white rounded-xl border border-blue-100 shadow-lg hover:shadow-xl transition-all duration-300 relative z-10">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white mb-4 shadow-md">
-                  <IconComponent className="w-8 h-8" />
-                </div>
-                <div className="text-3xl font-bold text-slate-900 mb-1">{achievement.label}</div>
-                <div className="text-slate-700 font-medium">{achievement.description}</div>
-              </div>
-            );
-          })}
-        </div>
+
 
         {/* Features Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">

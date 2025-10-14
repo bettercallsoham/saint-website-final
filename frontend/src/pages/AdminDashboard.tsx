@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import Navigation from "@/components/Navigation";
 import { useCurrentUser } from "@/hooks/useAuth";
+import { useEventRsvps } from "@/hooks/useEvents";
 import { 
   Users, 
   Calendar, 
@@ -24,7 +26,11 @@ import {
   Search,
   Filter,
   Upload,
-  X
+  X,
+  Download,
+  Eye,
+  Clock,
+  MapPin
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,14 +48,426 @@ import {
   useDeleteGalleryItem,
   useUpdateUserRole,
   useDeactivateUser,
-  useReactivateUser
+  useReactivateUser,
+  useBanUser,
+  useUnbanUser,
+  useDeleteUser
 } from "@/hooks/useAdminApi";
 import { useCreateGalleryItemMultiple } from "@/hooks/useGallery";
+
+// AttendanceManagement Component
+const AttendanceManagement = () => {
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [attendanceData, setAttendanceData] = useState<Record<string, boolean>>({});
+  const { data: eventsData } = useAdminEvents({ category: 'all' });
+  const { data: rsvpData } = useEventRsvps(selectedEvent?._id || '');
+
+  const upcomingEvents = eventsData?.data?.events?.filter((event: any) => 
+    new Date(event.date) >= new Date() && event.rsvpCount > 0
+  ) || [];
+
+  const handleAttendanceToggle = (userId: string) => {
+    setAttendanceData(prev => ({
+      ...prev,
+      [userId]: !prev[userId]
+    }));
+  };
+
+  const saveAttendance = () => {
+    // In a real implementation, this would call an API to save attendance
+    const attendedCount = Object.values(attendanceData).filter(Boolean).length;
+    toast.success(`Attendance marked for ${attendedCount} participants`);
+  };
+
+  const exportAttendance = () => {
+    if (!selectedEvent || !rsvpData?.data?.rsvps) return;
+    
+    const csvContent = [
+      ['Name', 'Email', 'Department', 'Year', 'Student ID', 'Attended'],
+      ...rsvpData.data.rsvps.map((rsvp: any) => [
+        rsvp.user.name || '',
+        rsvp.user.email || '',
+        rsvp.user.department || '',
+        rsvp.user.year || '',
+        rsvp.user.studentId || '',
+        attendanceData[rsvp.user._id] ? 'Yes' : 'No'
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${selectedEvent.title.replace(/[^a-zA-Z0-9]/g, '_')}_attendance.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const attendedCount = Object.values(attendanceData).filter(Boolean).length;
+  const totalRsvps = rsvpData?.data?.rsvps?.length || 0;
+  const absentCount = totalRsvps - attendedCount;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Attendance Management</h2>
+          <p className="text-gray-600 mt-1">Mark attendance for event participants</p>
+        </div>
+      </div>
+
+      {/* Event Selection */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Select Event</h3>
+        {upcomingEvents.length > 0 ? (
+          <div className="grid gap-4">
+            {upcomingEvents.map((event: any) => (
+              <div
+                key={event._id}
+                onClick={() => setSelectedEvent(event)}
+                className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                  selectedEvent?._id === event._id
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-semibold text-gray-900">{event.title}</h4>
+                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                      <span>📅 {new Date(event.date).toLocaleDateString()}</span>
+                      <span>🕒 {event.time}</span>
+                      <span>📍 {event.venue}</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="outline">{event.rsvpCount} RSVPs</Badge>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <Calendar className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+            <p>No upcoming events with RSVPs</p>
+          </div>
+        )}
+      </Card>
+
+      {/* Attendance Tracking */}
+      {selectedEvent && (
+        <Card className="p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+            <div>
+              <h3 className="text-lg font-semibold">Mark Attendance</h3>
+              <p className="text-gray-600">Event: {selectedEvent.title}</p>
+            </div>
+            <div className="flex gap-2 mt-4 sm:mt-0">
+              <Button onClick={saveAttendance} className="bg-green-600 hover:bg-green-700">
+                Save Attendance
+              </Button>
+              <Button onClick={exportAttendance} variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+            </div>
+          </div>
+
+          {/* Statistics */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <Card className="p-4 bg-blue-50">
+              <div className="flex items-center gap-3">
+                <Users className="h-8 w-8 text-blue-600" />
+                <div>
+                  <p className="text-sm text-blue-600">Total RSVPs</p>
+                  <p className="text-2xl font-bold text-blue-900">{totalRsvps}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 bg-green-50">
+              <div className="flex items-center gap-3">
+                <UserCheck className="h-8 w-8 text-green-600" />
+                <div>
+                  <p className="text-sm text-green-600">Present</p>
+                  <p className="text-2xl font-bold text-green-900">{attendedCount}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-4 bg-red-50">
+              <div className="flex items-center gap-3">
+                <UserX className="h-8 w-8 text-red-600" />
+                <div>
+                  <p className="text-sm text-red-600">Absent</p>
+                  <p className="text-2xl font-bold text-red-900">{absentCount}</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Participant List */}
+          <div className="space-y-2">
+            <h4 className="font-medium text-gray-900 mb-3">Participants ({totalRsvps})</h4>
+            {rsvpData?.data?.rsvps?.length > 0 ? (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {rsvpData.data.rsvps.map((rsvp: any, index: number) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{rsvp.user.name}</p>
+                      <p className="text-sm text-gray-600">{rsvp.user.email}</p>
+                      <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
+                        {rsvp.user.department && <span>Dept: {rsvp.user.department}</span>}
+                        {rsvp.user.year && <span>Year: {rsvp.user.year}</span>}
+                        {rsvp.user.studentId && <span>ID: {rsvp.user.studentId}</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        size="sm"
+                        variant={attendanceData[rsvp.user._id] ? "default" : "outline"}
+                        onClick={() => handleAttendanceToggle(rsvp.user._id)}
+                        className={
+                          attendanceData[rsvp.user._id]
+                            ? "bg-green-600 hover:bg-green-700 text-white"
+                            : "hover:bg-green-50 hover:text-green-700 hover:border-green-200"
+                        }
+                      >
+                        {attendanceData[rsvp.user._id] ? (
+                          <>
+                            <UserCheck className="h-4 w-4 mr-1" />
+                            Present
+                          </>
+                        ) : (
+                          <>
+                            <UserX className="h-4 w-4 mr-1" />
+                            Mark Present
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                <p>Loading participants...</p>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+};
+
+// EventManagementCard Component
+const EventManagementCard = ({ event, onEdit, onDelete }: { event: any; onEdit: () => void; onDelete: () => void }) => {
+  const [showRsvps, setShowRsvps] = useState(false);
+  const { data: rsvpData, isLoading: rsvpLoading } = useEventRsvps(showRsvps ? event._id : "");
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'upcoming': return 'bg-green-100 text-green-800 border-green-200';
+      case 'ongoing': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'completed': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const exportRsvps = () => {
+    if (!rsvpData?.data?.rsvps) return;
+    
+    const csvContent = [
+      ['Name', 'Email', 'Phone', 'Student ID', 'Department', 'Year', 'RSVP Date'],
+      ...rsvpData.data.rsvps.map((rsvp: any) => [
+        rsvp.user.name || '',
+        rsvp.user.email || '',
+        rsvp.user.phoneNumber || '',
+        rsvp.user.studentId || '',
+        rsvp.user.department || '',
+        rsvp.user.year || '',
+        new Date(rsvp.rsvpDate).toLocaleDateString()
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${event.title.replace(/[^a-zA-Z0-9]/g, '_')}_rsvps.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <Card className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-red-500">
+      <CardContent className="p-6">
+        <div className="space-y-4">
+          {/* Event Header */}
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Event Image */}
+            {event.images && event.images.length > 0 && (
+              <div className="lg:w-32 w-full">
+                <img 
+                  src={`http://localhost:5000${event.images.find((img: any) => img.isPrimary)?.url || event.images[0].url}`}
+                  alt={event.title}
+                  className="w-full lg:w-32 h-32 object-cover rounded-lg shadow-md"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+            
+            {/* Event Details */}
+            <div className="flex-1 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">{event.title}</h3>
+                  <p className="text-gray-600 line-clamp-2">{event.description}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge className={getStatusColor(event.status)}>
+                    {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                  </Badge>
+                  <Badge variant="outline">{event.category}</Badge>
+                </div>
+              </div>
+              
+              {/* Event Meta */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Calendar className="h-4 w-4 text-red-500" />
+                  <span>{formatDate(event.date)}</span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Clock className="h-4 w-4 text-red-500" />
+                  <span>{event.time}</span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <MapPin className="h-4 w-4 text-red-500" />
+                  <span className="truncate">{event.venue}</span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Users className="h-4 w-4 text-red-500" />
+                  <span>
+                    {event.rsvpCount} {event.maxAttendees ? `/ ${event.maxAttendees}` : ''} RSVPs
+                  </span>
+                </div>
+              </div>
+
+              {/* Speaker Info */}
+              {event.speaker?.name && (
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm font-medium text-blue-900">
+                    Speaker: {event.speaker.name}
+                    {event.speaker.designation && (
+                      <span className="text-blue-700 ml-2">• {event.speaker.designation}</span>
+                    )}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200">
+            <Button variant="outline" size="sm" onClick={onEdit} className="flex items-center gap-1">
+              <Edit className="h-4 w-4" />
+              Edit
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowRsvps(!showRsvps)}
+              className="flex items-center gap-1"
+            >
+              <Eye className="h-4 w-4" />
+              {showRsvps ? 'Hide' : 'View'} RSVPs ({event.rsvpCount})
+            </Button>
+            {event.rsvpCount > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={exportRsvps}
+                className="flex items-center gap-1"
+              >
+                <Download className="h-4 w-4" />
+                Export CSV
+              </Button>
+            )}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onDelete}
+              className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </Button>
+          </div>
+
+          {/* RSVP Details */}
+          {showRsvps && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+              <h4 className="font-semibold text-gray-900 mb-3">Event RSVPs</h4>
+              {rsvpLoading ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600 mx-auto mb-2"></div>
+                  <p className="text-gray-600">Loading RSVPs...</p>
+                </div>
+              ) : rsvpData?.data?.rsvps?.length > 0 ? (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {rsvpData.data.rsvps.map((rsvp: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-white rounded border">
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{rsvp.user.name}</p>
+                        <p className="text-sm text-gray-600">{rsvp.user.email}</p>
+                        <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
+                          {rsvp.user.department && <span>Dept: {rsvp.user.department}</span>}
+                          {rsvp.user.year && <span>Year: {rsvp.user.year}</span>}
+                          {rsvp.user.studentId && <span>ID: {rsvp.user.studentId}</span>}
+                        </div>
+                      </div>
+                      <div className="text-right text-sm text-gray-500">
+                        <p>RSVP'd on</p>
+                        <p>{new Date(rsvp.rsvpDate).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <p>No RSVPs yet</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, isAdmin } = useCurrentUser();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'events' | 'users' | 'gallery'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'events' | 'users' | 'gallery' | 'attendance'>('dashboard');
 
   // Forms state
   const [showEventForm, setShowEventForm] = useState(false);
@@ -80,6 +498,9 @@ const AdminDashboard = () => {
   const updateUserRoleMutation = useUpdateUserRole();
   const deactivateUserMutation = useDeactivateUser();
   const reactivateUserMutation = useReactivateUser();
+  const banUserMutation = useBanUser();
+  const unbanUserMutation = useUnbanUser();
+  const deleteUserMutation = useDeleteUser();
 
   // Event form state
   const [eventForm, setEventForm] = useState({
@@ -117,6 +538,21 @@ const AdminDashboard = () => {
   const [multipleFilePreviews, setMultipleFilePreviews] = useState<string[]>([]);
   const [showMultipleForm, setShowMultipleForm] = useState(false);
   const [primaryImageIndex, setPrimaryImageIndex] = useState(0);
+
+  // Confirmation dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+    variant?: 'default' | 'destructive';
+  }>({
+    open: false,
+    title: '',
+    description: '',
+    onConfirm: () => {},
+    variant: 'default'
+  });
 
   // File upload state for events
   const [selectedEventFile, setSelectedEventFile] = useState<File | null>(null);
@@ -328,25 +764,37 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteEvent = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this event?")) {
-      try {
-        await deleteEventMutation.mutateAsync(id);
-        toast.success("Event deleted successfully!");
-      } catch (error) {
-        toast.error("Failed to delete event");
+    setConfirmDialog({
+      open: true,
+      title: "Delete Event",
+      description: "Are you sure you want to delete this event? This action cannot be undone.",
+      variant: 'destructive',
+      onConfirm: async () => {
+        try {
+          await deleteEventMutation.mutateAsync(id);
+          toast.success("Event deleted successfully!");
+        } catch (error) {
+          toast.error("Failed to delete event");
+        }
       }
-    }
+    });
   };
 
   const handleDeleteGalleryItem = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this gallery item?")) {
-      try {
-        await deleteGalleryMutation.mutateAsync(id);
-        toast.success("Gallery item deleted successfully!");
-      } catch (error) {
-        toast.error("Failed to delete gallery item");
+    setConfirmDialog({
+      open: true,
+      title: "Delete Gallery Item",
+      description: "Are you sure you want to delete this gallery item? This action cannot be undone.",
+      variant: 'destructive',
+      onConfirm: async () => {
+        try {
+          await deleteGalleryMutation.mutateAsync(id);
+          toast.success("Gallery item deleted successfully!");
+        } catch (error) {
+          toast.error("Failed to delete gallery item");
+        }
       }
-    }
+    });
   };
 
   const handleUpdateUserRole = async (userId: string, newRole: string) => {
@@ -359,13 +807,59 @@ const AdminDashboard = () => {
   };
 
   const handleDeactivateUser = async (userId: string) => {
-    if (window.confirm("Are you sure you want to deactivate this user?")) {
-      try {
-        await deactivateUserMutation.mutateAsync(userId);
-        toast.success("User deactivated successfully!");
-      } catch (error) {
-        toast.error("Failed to deactivate user");
+    setConfirmDialog({
+      open: true,
+      title: "Deactivate User",
+      description: "Are you sure you want to deactivate this user? They will lose access to their account.",
+      variant: 'destructive',
+      onConfirm: async () => {
+        try {
+          await deactivateUserMutation.mutateAsync(userId);
+          toast.success("User deactivated successfully!");
+        } catch (error) {
+          toast.error("Failed to deactivate user");
+        }
       }
+    });
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    setConfirmDialog({
+      open: true,
+      title: "Delete User Permanently",
+      description: "Are you sure you want to permanently delete this user? This action cannot be undone and will remove their email from the database.",
+      variant: 'destructive',
+      onConfirm: async () => {
+        try {
+          await deleteUserMutation.mutateAsync(userId);
+        } catch (error) {
+          toast.error("Failed to delete user");
+        }
+      }
+    });
+  };
+
+  const handleBanUser = async (userId: string) => {
+    setConfirmDialog({
+      open: true,
+      title: "Ban User",
+      description: "Are you sure you want to ban this user? They will not be able to log in until unbanned.",
+      variant: 'destructive',
+      onConfirm: async () => {
+        try {
+          await banUserMutation.mutateAsync(userId);
+        } catch (error) {
+          toast.error("Failed to ban user");
+        }
+      }
+    });
+  };
+
+  const handleUnbanUser = async (userId: string) => {
+    try {
+      await unbanUserMutation.mutateAsync(userId);
+    } catch (error) {
+      toast.error("Failed to unban user");
     }
   };
 
@@ -613,6 +1107,7 @@ const AdminDashboard = () => {
             { id: 'events', label: 'Events', icon: Calendar },
             { id: 'users', label: 'Users', icon: Users },
             { id: 'gallery', label: 'Gallery', icon: ImageIcon },
+            { id: 'attendance', label: 'Attendance', icon: UserCheck },
           ].map((tab) => {
             const Icon = tab.icon;
             return (
@@ -742,57 +1237,62 @@ const AdminDashboard = () => {
         {/* Events Management */}
         {activeTab === 'events' && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Events Management</h2>
-              <Button onClick={() => setShowEventForm(true)} className="bg-red-500 hover:bg-red-600">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Event
-              </Button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900">Events Management</h2>
+                <p className="text-gray-600 mt-1">Manage events, view RSVPs and track attendance</p>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={() => setShowEventForm(true)} className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Event
+                </Button>
+              </div>
             </div>
 
-            {/* Events List */}
-            <div className="space-y-4">
+            {/* Filter Section */}
+            <div className="flex flex-wrap gap-4 p-4 bg-gray-50 rounded-lg">
+              <Select value={eventCategory} onValueChange={setEventCategory}>
+                <SelectTrigger className="w-40">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="workshop">Workshop</SelectItem>
+                  <SelectItem value="seminar">Seminar</SelectItem>
+                  <SelectItem value="competition">Competition</SelectItem>
+                  <SelectItem value="social">Social</SelectItem>
+                  <SelectItem value="meeting">Meeting</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Events Grid */}
+            <div className="grid gap-6">
               {eventsLoading ? (
-                <p>Loading events...</p>
+                <div className="flex justify-center items-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading events...</p>
+                  </div>
+                </div>
+              ) : eventsData?.data?.events?.length > 0 ? (
+                eventsData.data.events.map((event: any) => (
+                  <EventManagementCard 
+                    key={event._id} 
+                    event={event} 
+                    onEdit={() => editEvent(event)}
+                    onDelete={() => handleDeleteEvent(event._id)}
+                  />
+                ))
               ) : (
-                eventsData?.data?.events?.map((event: any) => (
-                <Card key={event._id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4 flex-1">
-                        {event.images && event.images.length > 0 && (
-                          <img 
-                            src={`http://localhost:5000${event.images.find((img: any) => img.isPrimary)?.url || event.images[0].url}`}
-                            alt={event.title}
-                            className="w-20 h-20 object-cover rounded-lg"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        )}
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold">{event.title}</h3>
-                          <p className="text-gray-600 mt-1">{event.description}</p>
-                          <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
-                            <span>📅 {new Date(event.date).toLocaleDateString()}</span>
-                            <span>🕒 {event.time}</span>
-                            <span>📍 {event.venue}</span>
-                            <Badge variant="outline">{event.category}</Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => editEvent(event)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleDeleteEvent(event._id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                )) || <p>No events found</p>
+                <div className="text-center py-12">
+                  <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 mb-2">No events found</p>
+                  <p className="text-gray-400 text-sm">Create your first event to get started</p>
+                </div>
               )}
             </div>
           </div>
@@ -840,9 +1340,21 @@ const AdminDashboard = () => {
                           {user.name?.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <h3 className="font-semibold">{user.name}</h3>
+                          <h3 className="font-semibold flex items-center gap-2">
+                            {user.name}
+                            {user.status === 'banned' && (
+                              <Badge variant="destructive" className="text-xs">
+                                BANNED
+                              </Badge>
+                            )}
+                            {user.status === 'suspended' && (
+                              <Badge variant="outline" className="text-xs border-orange-500 text-orange-600">
+                                SUSPENDED
+                              </Badge>
+                            )}
+                          </h3>
                           <p className="text-gray-600">{user.email}</p>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
                               {user.role}
                             </Badge>
@@ -852,13 +1364,25 @@ const AdminDashboard = () => {
                             {user.year && (
                               <span className="text-sm text-gray-500">{user.year} Year</span>
                             )}
+                            {user.studentId && (
+                              <span className="text-xs text-gray-400">ID: {user.studentId}</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            Joined: {new Date(user.joinedAt).toLocaleDateString()}
+                            {user.lastLogin && (
+                              <span className="ml-2">
+                                • Last login: {new Date(user.lastLogin).toLocaleDateString()}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Select
                           value={user.role}
                           onValueChange={(newRole) => handleUpdateUserRole(user._id, newRole)}
+                          disabled={user.status === 'banned'}
                         >
                           <SelectTrigger className="w-24">
                             <SelectValue />
@@ -868,8 +1392,39 @@ const AdminDashboard = () => {
                             <SelectItem value="admin">Admin</SelectItem>
                           </SelectContent>
                         </Select>
-                        <Button variant="outline" size="sm" onClick={() => handleDeactivateUser(user._id)}>
-                          <UserX className="h-4 w-4" />
+                        
+                        {user.status === 'banned' ? (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleUnbanUser(user._id)}
+                            className="border-green-500 text-green-600 hover:bg-green-50"
+                            title="Unban user"
+                          >
+                            <UserCheck className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleBanUser(user._id)}
+                            className="border-red-500 text-red-600 hover:bg-red-50"
+                            disabled={user.role === 'admin'}
+                            title={user.role === 'admin' ? "Cannot ban admin" : "Ban user"}
+                          >
+                            <Shield className="h-4 w-4" />
+                          </Button>
+                        )}
+                        
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleDeleteUser(user._id)}
+                          title="Delete user permanently"
+                          className="border-red-500 text-red-600 hover:bg-red-50"
+                          disabled={user.role === 'admin'}
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
@@ -901,46 +1456,112 @@ const AdminDashboard = () => {
             {/* Gallery Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {galleryLoading ? (
-                <p>Loading gallery...</p>
-              ) : (
-                galleryData?.data?.gallery?.map((item: any) => (
-                <Card key={item._id}>
-                  <div className="aspect-video bg-gray-200 rounded-t-lg overflow-hidden">
-                    <img 
-                      src={item.imageUrl.startsWith('http') ? item.imageUrl : `http://localhost:5000${item.imageUrl}`} 
-                      alt={item.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/placeholder.svg';
-                      }}
-                    />
+                <div className="col-span-full flex justify-center items-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading gallery...</p>
                   </div>
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold mb-2">{item.title}</h3>
-                    {item.description && (
-                      <p className="text-gray-600 text-sm mb-3">{item.description}</p>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">{item.category}</Badge>
-                        {item.isFeatured && <Badge variant="default">Featured</Badge>}
+                </div>
+              ) : galleryData?.data?.gallery?.length > 0 ? (
+                galleryData.data.gallery.map((item: any) => {
+                  // Determine the image URL to display
+                  const getImageUrl = () => {
+                    // If there are multiple images, use the primary one or first image
+                    if (item.images && item.images.length > 0) {
+                      const primaryImage = item.images.find((img: any) => img.isPrimary);
+                      const imageToUse = primaryImage || item.images[0];
+                      return imageToUse.url.startsWith('http') ? imageToUse.url : `http://localhost:5000${imageToUse.url}`;
+                    }
+                    // Fallback to imageUrl field
+                    if (item.imageUrl) {
+                      return item.imageUrl.startsWith('http') ? item.imageUrl : `http://localhost:5000${item.imageUrl}`;
+                    }
+                    return null;
+                  };
+
+                  const imageUrl = getImageUrl();
+
+                  return (
+                    <Card key={item._id} className="hover:shadow-lg transition-shadow duration-200">
+                      <div className="aspect-video bg-gray-200 rounded-t-lg overflow-hidden relative">
+                        {imageUrl ? (
+                          <img 
+                            src={imageUrl}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error('Image load error for:', imageUrl);
+                              (e.target as HTMLImageElement).src = '/placeholder.svg';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                            <ImageIcon className="h-12 w-12 text-gray-400" />
+                            <span className="ml-2 text-gray-500">No image</span>
+                          </div>
+                        )}
+                        {/* Multiple images indicator */}
+                        {item.images && item.images.length > 1 && (
+                          <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded-md text-xs">
+                            +{item.images.length - 1} more
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => editGalleryItem(item)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleDeleteGalleryItem(item._id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                  </Card>
-                )) || <p>No gallery items found</p>
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-semibold text-lg truncate flex-1">{item.title}</h3>
+                          <div className="flex items-center gap-1 ml-2 text-xs text-gray-500">
+                            <Users className="h-3 w-3" />
+                            <span>{item.views || 0}</span>
+                          </div>
+                        </div>
+                        {item.description && (
+                          <p className="text-gray-600 text-sm mb-3 line-clamp-2">{item.description}</p>
+                        )}
+                        {item.eventName && (
+                          <p className="text-blue-600 text-sm mb-2 font-medium">Event: {item.eventName}</p>
+                        )}
+                        {item.photographer && (
+                          <p className="text-gray-500 text-xs mb-3">📸 {item.photographer}</p>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="outline" className="text-xs">{item.category}</Badge>
+                            {item.isFeatured && <Badge className="bg-yellow-100 text-yellow-800 text-xs">Featured</Badge>}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => editGalleryItem(item)} title="Edit">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleDeleteGalleryItem(item._id)} title="Delete" className="hover:bg-red-50 hover:border-red-200">
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+                          Created: {new Date(item.createdAt).toLocaleDateString()}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              ) : (
+                <div className="col-span-full text-center py-12">
+                  <ImageIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 mb-2">No gallery items found</p>
+                  <p className="text-gray-400 text-sm">Start by adding some images to your gallery</p>
+                </div>
               )}
             </div>
           </div>
-        )}        {/* Event Form Modal */}
+        )}
+
+        {/* Attendance Management */}
+        {activeTab === 'attendance' && (
+          <AttendanceManagement />
+        )}
+
+        {/* Event Form Modal */}
         {showEventForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
             <Card className="w-full max-w-2xl my-8 max-h-fit">
@@ -1496,6 +2117,16 @@ const AdminDashboard = () => {
             </Card>
           </div>
         )}
+
+        {/* Confirmation Dialog */}
+        <ConfirmDialog
+          open={confirmDialog.open}
+          onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          onConfirm={confirmDialog.onConfirm}
+          variant={confirmDialog.variant}
+        />
       </div>
     </div>
   );

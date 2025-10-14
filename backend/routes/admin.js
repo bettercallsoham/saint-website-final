@@ -9,8 +9,11 @@ const {
   getUserById,
   updateUserRole,
   updateUser,
+  banUser,
+  unbanUser,
   deactivateUser,
-  reactivateUser
+  reactivateUser,
+  deleteUser
 } = require('../controllers/adminController');
 
 // All admin routes require authentication and admin role
@@ -26,7 +29,10 @@ router.get('/users', getAllUsers);
 router.get('/users/:id', getUserById);
 router.put('/users/:id/role', updateUserRole);
 router.put('/users/:id', updateUser);
+router.post('/users/:id/ban', banUser);
+router.post('/users/:id/unban', unbanUser);
 router.delete('/users/:id', deactivateUser);
+router.delete('/users/:id/permanent', deleteUser);
 router.post('/users/:id/reactivate', reactivateUser);
 
 module.exports = router;

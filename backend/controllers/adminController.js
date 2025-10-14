@@ -457,6 +457,92 @@ const updateUser = async (req, res) => {
   }
 };
 
+// Ban user (set status to banned)
+const banUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason = 'Violating community guidelines' } = req.body;
+    
+    const user = await User.findById(id);
+    
+    if (!user || !user.isActive) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: 'USER_NOT_FOUND'
+      });
+    }
+    
+    // Don't allow admins to ban themselves
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot ban your own account',
+        error: 'CANNOT_BAN_SELF'
+      });
+    }
+    
+    // Don't allow banning other admins
+    if (user.role === 'admin') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot ban another admin',
+        error: 'CANNOT_BAN_ADMIN'
+      });
+    }
+    
+    await user.ban();
+    
+    res.status(200).json({
+      success: true,
+      message: 'User banned successfully',
+      data: { 
+        user: user.toPublicJSON(),
+        reason 
+      }
+    });
+  } catch (error) {
+    console.error('Ban user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error banning user',
+      error: 'BAN_USER_ERROR'
+    });
+  }
+};
+
+// Unban user (set status back to active)
+const unbanUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const user = await User.findById(id);
+    
+    if (!user || !user.isActive) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: 'USER_NOT_FOUND'
+      });
+    }
+    
+    await user.unban();
+    
+    res.status(200).json({
+      success: true,
+      message: 'User unbanned successfully',
+      data: { user: user.toPublicJSON() }
+    });
+  } catch (error) {
+    console.error('Unban user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error unbanning user',
+      error: 'UNBAN_USER_ERROR'
+    });
+  }
+};
+
 // Deactivate user (soft delete)
 const deactivateUser = async (req, res) => {
   try {
@@ -495,6 +581,57 @@ const deactivateUser = async (req, res) => {
       success: false,
       message: 'Error deactivating user',
       error: 'DEACTIVATE_USER_ERROR'
+    });
+  }
+};
+
+// Delete user permanently (hard delete)
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const user = await User.findById(id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: 'USER_NOT_FOUND'
+      });
+    }
+    
+    // Don't allow admins to delete themselves
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete your own account',
+        error: 'CANNOT_DELETE_SELF'
+      });
+    }
+    
+    // Don't allow deleting other admins
+    if (user.role === 'admin') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete another admin',
+        error: 'CANNOT_DELETE_ADMIN'
+      });
+    }
+    
+    // Permanently delete the user from database
+    await User.findByIdAndDelete(id);
+    
+    res.status(200).json({
+      success: true,
+      message: 'User deleted permanently',
+      data: { deletedUserId: id, email: user.email }
+    });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting user',
+      error: 'DELETE_USER_ERROR'
     });
   }
 };
@@ -540,6 +677,9 @@ module.exports = {
   getUserById,
   updateUserRole,
   updateUser,
+  banUser,
+  unbanUser,
   deactivateUser,
-  reactivateUser
+  reactivateUser,
+  deleteUser
 };

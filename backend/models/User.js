@@ -28,6 +28,11 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user'
   },
+  status: {
+    type: String,
+    enum: ['active', 'banned', 'suspended'],
+    default: 'active'
+  },
   phoneNumber: {
     type: String,
     trim: true,
@@ -71,6 +76,7 @@ const userSchema = new mongoose.Schema({
 userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ isActive: 1 });
+userSchema.index({ status: 1 });
 
 // Pre-save middleware to hash password
 userSchema.pre('save', async function(next) {
@@ -103,12 +109,29 @@ userSchema.methods.toPublicJSON = function() {
 
 // Static method to find active users
 userSchema.statics.findActiveUsers = function() {
-  return this.find({ isActive: true });
+  return this.find({ isActive: true, status: 'active' });
 };
 
 // Static method to find by email
 userSchema.statics.findByEmail = function(email) {
   return this.findOne({ email: email.toLowerCase() });
+};
+
+// Instance method to ban user
+userSchema.methods.ban = function() {
+  this.status = 'banned';
+  return this.save();
+};
+
+// Instance method to unban user
+userSchema.methods.unban = function() {
+  this.status = 'active';
+  return this.save();
+};
+
+// Instance method to check if user can login
+userSchema.methods.canLogin = function() {
+  return this.isActive && this.status === 'active';
 };
 
 module.exports = mongoose.model('User', userSchema);

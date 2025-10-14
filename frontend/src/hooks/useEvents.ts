@@ -149,3 +149,15 @@ export const useCancelRsvp = () => {
     },
   });
 };
+
+// Get event RSVPs (Admin only)
+export const useEventRsvps = (eventId: string) => {
+  return useQuery({
+    queryKey: [...EVENTS_QUERY_KEYS.all, 'rsvps', eventId],
+    queryFn: async () => {
+      return eventsApi.getRsvps(eventId);
+    },
+    enabled: !!eventId,
+    staleTime: 30 * 1000, // 30 seconds
+  });
+};

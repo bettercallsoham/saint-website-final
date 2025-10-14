@@ -164,6 +164,24 @@ export const useDeactivateUser = () => {
   });
 };
 
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return apiService.delete(`/api/admin/users/${id}/permanent`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.dashboard });
+      toast.success('User deleted permanently');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to delete user');
+    },
+  });
+};
+
 export const useReactivateUser = () => {
   const queryClient = useQueryClient();
 
@@ -177,6 +195,42 @@ export const useReactivateUser = () => {
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to reactivate user');
+    },
+  });
+};
+
+export const useBanUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return apiService.post(`/api/admin/users/${id}/ban`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.dashboard });
+      toast.success('User banned successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to ban user');
+    },
+  });
+};
+
+export const useUnbanUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return apiService.post(`/api/admin/users/${id}/unban`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.dashboard });
+      toast.success('User unbanned successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to unban user');
     },
   });
 };

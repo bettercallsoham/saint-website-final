@@ -4,10 +4,12 @@ import { API_ENDPOINTS } from '../config/api';
 // Member Types
 export interface Member {
   id: string;
+  _id?: string;
   name: string;
-  email: string;
+  email?: string;
   role: string;
   position: string;
+  designation?: string; // For core team members
   year: string;
   branch: string;
   studentId: string;
@@ -17,8 +19,11 @@ export interface Member {
   linkedin?: string;
   github?: string;
   portfolio?: string;
-  joinedAt: string;
+  phoneNumber?: string;
+  joinedAt?: string;
   isActive: boolean;
+  isCoreTeam?: boolean;
+  displayOrder?: number;
 }
 
 // Members response type to match backend structure
@@ -34,9 +39,10 @@ export interface MembersResponse {
 
 export interface CreateMemberData {
   name: string;
-  email: string;
+  email?: string;
   role: string;
   position: string;
+  designation?: string;
   year: string;
   branch: string;
   studentId: string;
@@ -46,6 +52,9 @@ export interface CreateMemberData {
   linkedin?: string;
   github?: string;
   portfolio?: string;
+  phoneNumber?: string;
+  isCoreTeam?: boolean;
+  displayOrder?: number;
 }
 
 // Members API Functions
@@ -53,6 +62,11 @@ export const membersApi = {
   // Get all members
   getAll: async (): Promise<ApiResponse<MembersResponse>> => {
     return apiService.get<MembersResponse>(API_ENDPOINTS.MEMBERS.GET_ALL);
+  },
+
+  // Get core team members
+  getCoreTeam: async (): Promise<ApiResponse<MembersResponse>> => {
+    return apiService.get<MembersResponse>(`${API_ENDPOINTS.MEMBERS.GET_ALL}/core-team`);
   },
 
   // Get single member by ID

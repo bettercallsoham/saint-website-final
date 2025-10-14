@@ -3,9 +3,13 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, MapPin, Clock, Users, Play, ArrowRight, Loader2, CalendarDays } from "lucide-react";
 import { CustomArrow, FloatingElement } from "@/components/InteractiveElements";
 import InteractiveBackground from "@/components/InteractiveBackground";
+import { VideoHighlights } from "@/components/VideoPlayer";
 import { useEvents, useRsvpToEvent, useCancelRsvp } from "@/hooks/useEvents";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { format } from "date-fns";
@@ -18,6 +22,15 @@ const Events = () => {
   const rsvpMutation = useRsvpToEvent();
   const cancelRsvpMutation = useCancelRsvp();
   const [rsvpStates, setRsvpStates] = useState<Record<string, boolean>>({});
+  const [showRsvpModal, setShowRsvpModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [rsvpForm, setRsvpForm] = useState({
+    fullName: '',
+    department: '',
+    year: '',
+    rbtNumber: '',
+    phoneNumber: ''
+  });
 
   // Separate upcoming and past events
   const now = new Date();
@@ -32,15 +45,46 @@ const Events = () => {
     }
 
     const isCurrentlyRsvped = rsvpStates[eventId];
+    const event = upcomingEvents.find(e => e._id === eventId) || pastEvents.find(e => e._id === eventId);
     
     try {
       if (isCurrentlyRsvped) {
         await cancelRsvpMutation.mutateAsync(eventId);
         setRsvpStates(prev => ({ ...prev, [eventId]: false }));
+        toast.success('RSVP cancelled successfully');
       } else {
-        await rsvpMutation.mutateAsync(eventId);
-        setRsvpStates(prev => ({ ...prev, [eventId]: true }));
+        // Show RSVP form modal for new registrations
+        setSelectedEvent(event);
+        setRsvpForm({
+          fullName: user?.name || '',
+          department: user?.department || '',
+          year: user?.year || '',
+          rbtNumber: user?.studentId || '',
+          phoneNumber: user?.phoneNumber || ''
+        });
+        setShowRsvpModal(true);
       }
+    } catch (error) {
+      console.error('RSVP error:', error);
+    }
+  };
+
+  // Handle RSVP form submission
+  const handleRsvpSubmit = async () => {
+    if (!selectedEvent) return;
+    
+    // Validate required fields
+    if (!rsvpForm.fullName || !rsvpForm.department || !rsvpForm.year) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      await rsvpMutation.mutateAsync(selectedEvent._id);
+      setRsvpStates(prev => ({ ...prev, [selectedEvent._id]: true }));
+      setShowRsvpModal(false);
+      setSelectedEvent(null);
+      toast.success('RSVP successful! You will receive confirmation details shortly.');
     } catch (error) {
       console.error('RSVP error:', error);
     }
@@ -174,14 +218,17 @@ const Events = () => {
 
             {/* Hero Media */}
             <div className="relative">
-              <div className="aspect-video rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center group cursor-pointer hover-shadow smooth-transition">
-                <div className="text-center">
-                  <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mb-4 mx-auto group-hover:scale-110 smooth-transition">
-                    <Play className="h-8 w-8 text-white ml-1" />
-                  </div>
-                  <p className="text-gray-700 font-medium">Watch Event Highlights</p>
-                </div>
-              </div>
+              <VideoHighlights
+                videos={[
+                  {
+                    id: "club-intro-2024",
+                    title: "SAInT Club Introduction 2024",
+                    src: "/videos/highlights/club-introduction-2024.mp4",
+                    description: "Get to know SAInT - our mission, activities, and amazing community of tech enthusiasts.",
+                    thumbnail: "/images/video-thumbnails/club-intro-thumbnail-simple.svg"
+                  }
+                ]}
+              />
               
               {/* Floating elements */}
               <div className="absolute -top-4 -right-4 w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl rotate-12 opacity-80 animate-pulse"></div>
@@ -360,6 +407,143 @@ const Events = () => {
           </div>
         </div>
       </section>
+
+      {/* RSVP Modal */}
+      {showRsvpModal && selectedEvent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <Card className="w-full max-w-lg bg-white">
+            <CardHeader className="border-b">
+              <CardTitle className="text-xl font-bold text-gray-900">
+                Complete Your RSVP
+              </CardTitle>
+              <p className="text-gray-600 mt-1">Event: {selectedEvent.title}</p>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">
+                    Full Name *
+                  </Label>
+                  <Input
+                    id="fullName"
+                    value={rsvpForm.fullName}
+                    onChange={(e) => setRsvpForm(prev => ({ ...prev, fullName: e.target.value }))}
+                    placeholder="Enter your full name"
+                    className="mt-1"
+                    required
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="department" className="text-sm font-medium text-gray-700">
+                      Department *
+                    </Label>
+                    <Input
+                      id="department"
+                      value={rsvpForm.department}
+                      onChange={(e) => setRsvpForm(prev => ({ ...prev, department: e.target.value }))}
+                      placeholder="e.g., Computer Science"
+                      className="mt-1"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="year" className="text-sm font-medium text-gray-700">
+                      Year *
+                    </Label>
+                    <Select value={rsvpForm.year} onValueChange={(value) => setRsvpForm(prev => ({ ...prev, year: value }))}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1st">1st Year</SelectItem>
+                        <SelectItem value="2nd">2nd Year</SelectItem>
+                        <SelectItem value="3rd">3rd Year</SelectItem>
+                        <SelectItem value="4th">4th Year</SelectItem>
+                        <SelectItem value="Alumni">Alumni</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="rbtNumber" className="text-sm font-medium text-gray-700">
+                    RBT Number
+                  </Label>
+                  <Input
+                    id="rbtNumber"
+                    value={rsvpForm.rbtNumber}
+                    onChange={(e) => setRsvpForm(prev => ({ ...prev, rbtNumber: e.target.value }))}
+                    placeholder="Enter your RBT number"
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">
+                    Phone Number
+                  </Label>
+                  <Input
+                    id="phoneNumber"
+                    value={rsvpForm.phoneNumber}
+                    onChange={(e) => setRsvpForm(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                    placeholder="Enter your phone number"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 mt-4">
+                  <div className="flex items-center gap-2 text-blue-800 mb-2">
+                    <Calendar className="h-4 w-4" />
+                    <span className="font-medium">Event Details</span>
+                  </div>
+                  <p className="text-blue-700 text-sm">
+                    📅 {format(new Date(selectedEvent.date), 'MMM d, yyyy')} at {selectedEvent.time}
+                  </p>
+                  <p className="text-blue-700 text-sm">
+                    📍 {selectedEvent.venue}
+                  </p>
+                  {selectedEvent.maxAttendees && (
+                    <p className="text-blue-700 text-sm mt-1">
+                      🎟️ {selectedEvent.rsvpCount}/{selectedEvent.maxAttendees} spots filled
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex gap-3 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowRsvpModal(false);
+                    setSelectedEvent(null);
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleRsvpSubmit}
+                  disabled={rsvpMutation.isPending}
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                >
+                  {rsvpMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    'Confirm RSVP'
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Footer />
     </div>

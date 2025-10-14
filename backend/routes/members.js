@@ -5,11 +5,13 @@ const {
   getAllMembers,
   getMemberById,
   deleteMember,
-  getMemberStats
+  getMemberStats,
+  getCoreTeamMembers
 } = require('../controllers/membersController');
 
 // Public routes
 router.get('/', getAllMembers);
+router.get('/core-team', getCoreTeamMembers);
 router.get('/:id', getMemberById);
 
 // Admin only routes

@@ -9,12 +9,7 @@ import { format } from "date-fns";
 const GallerySection = () => {
   const { data: galleryItems, isLoading, error } = useGallery();
 
-  // Calculate dynamic stats from API data
-  const stats = [
-    { label: "Gallery Items", value: `${galleryItems?.length || 0}`, icon: Calendar },
-    { label: "Total Views", value: `${galleryItems?.reduce((sum, item) => sum + (item.views || 0), 0) || 0}+`, icon: Users },
-    { label: "Total Likes", value: `${galleryItems?.reduce((sum, item) => sum + (item.likes || 0), 0) || 0}+`, icon: Award }
-  ];
+
 
   const getCategoryColor = (category: string) => {
     switch (category.toLowerCase()) {
@@ -89,21 +84,7 @@ const GallerySection = () => {
           </p>
         </div>
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-6 mb-8">
-          {stats.map((stat, index) => {
-            const IconComponent = stat.icon;
-            return (
-              <div key={index} className="text-center p-6 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-blue-100 shadow-sm">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white mb-4">
-                  <IconComponent className="w-8 h-8" />
-                </div>
-                <div className="text-3xl font-bold text-slate-800 mb-1">{stat.value}</div>
-                <div className="text-slate-600">{stat.label}</div>
-              </div>
-            );
-          })}
-        </div>
+
 
         {/* Featured Gallery Items */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
