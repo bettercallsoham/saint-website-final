@@ -91,9 +91,12 @@ const getEventById = async (req, res) => {
 // Create new event (Admin only)
 const createEvent = async (req, res) => {
   try {
+    console.log('Received event data:', req.body);
+    
     // Validate input data
     const { error } = validateEvent(req.body);
     if (error) {
+      console.log('Validation error:', error.details[0]);
       return res.status(400).json({
         success: false,
         message: 'Validation error',

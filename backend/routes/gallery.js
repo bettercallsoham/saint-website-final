@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate, requireAdmin, optionalAuth } = require('../middleware/auth');
+const { uploadSingle, handleUploadError } = require('../middleware/upload');
 const {
   getAllGallery,
   getGalleryById,
@@ -20,8 +21,8 @@ router.get('/:id', optionalAuth, getGalleryById); // Optional auth to track view
 router.post('/:id/like', authenticate, toggleLike);
 
 // Admin only routes
-router.post('/', authenticate, requireAdmin, createGalleryItem);
-router.put('/:id', authenticate, requireAdmin, updateGalleryItem);
+router.post('/', authenticate, requireAdmin, uploadSingle, handleUploadError, createGalleryItem);
+router.put('/:id', authenticate, requireAdmin, uploadSingle, handleUploadError, updateGalleryItem);
 router.delete('/:id', authenticate, requireAdmin, deleteGalleryItem);
 
 module.exports = router;

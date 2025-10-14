@@ -57,7 +57,17 @@ export const galleryApi = {
   },
 
   // Create new gallery item (Admin only)
-  create: async (itemData: CreateGalleryItemData): Promise<ApiResponse<GalleryItem>> => {
+  create: async (itemData: CreateGalleryItemData | FormData): Promise<ApiResponse<GalleryItem>> => {
     return apiService.post<GalleryItem>(API_ENDPOINTS.GALLERY.CREATE, itemData);
+  },
+
+  // Update gallery item (Admin only)
+  update: async (id: string, itemData: Partial<CreateGalleryItemData> | FormData): Promise<ApiResponse<GalleryItem>> => {
+    return apiService.put<GalleryItem>(API_ENDPOINTS.GALLERY.UPDATE(id), itemData);
+  },
+
+  // Delete gallery item (Admin only)
+  delete: async (id: string): Promise<ApiResponse<void>> => {
+    return apiService.delete<void>(API_ENDPOINTS.GALLERY.DELETE(id));
   },
 };

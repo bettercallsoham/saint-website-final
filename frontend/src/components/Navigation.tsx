@@ -31,6 +31,7 @@ const Navigation = () => {
     { label: "Members", to: "/members" },
     { label: "Gallery", to: "/gallery" },
     { label: "Contact", to: "/contact" },
+    ...(isAdmin ? [{ label: "Admin Dashboard", to: "/admin/dashboard" }] : []),
   ];
 
   const handleLogout = async () => {

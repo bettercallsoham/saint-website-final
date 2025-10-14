@@ -262,8 +262,284 @@ const getActivitySummary = async (req, res) => {
   }
 };
 
+// User Management Functions
+
+// Get all users for admin management
+const getAllUsers = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search = '', role = '', department = '', year = '' } = req.query;
+    
+    // Build filter object
+    const filter = { isActive: true };
+    
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { studentId: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    if (role && role !== 'all') {
+      filter.role = role;
+    }
+    
+    if (department) {
+      filter.department = { $regex: department, $options: 'i' };
+    }
+    
+    if (year) {
+      filter.year = year;
+    }
+    
+    // Calculate pagination
+    const pageNumber = parseInt(page);
+    const pageSize = parseInt(limit);
+    const skip = (pageNumber - 1) * pageSize;
+    
+    // Get users with pagination
+    const users = await User.find(filter)
+      .select('-password -resetPasswordToken -resetPasswordExpires')
+      .sort({ joinedAt: -1 })
+      .skip(skip)
+      .limit(pageSize);
+    
+    // Get total count for pagination
+    const totalUsers = await User.countDocuments(filter);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Users retrieved successfully',
+      data: {
+        users,
+        pagination: {
+          currentPage: pageNumber,
+          totalPages: Math.ceil(totalUsers / pageSize),
+          totalUsers,
+          hasNext: pageNumber < Math.ceil(totalUsers / pageSize),
+          hasPrev: pageNumber > 1
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get all users error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving users',
+      error: 'GET_USERS_ERROR'
+    });
+  }
+};
+
+// Get single user by ID
+const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const user = await User.findById(id)
+      .select('-password -resetPasswordToken -resetPasswordExpires');
+    
+    if (!user || !user.isActive) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: 'USER_NOT_FOUND'
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: 'User retrieved successfully',
+      data: { user }
+    });
+  } catch (error) {
+    console.error('Get user by ID error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving user',
+      error: 'GET_USER_ERROR'
+    });
+  }
+};
+
+// Update user role (admin only)
+const updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+    
+    if (!['user', 'admin'].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid role. Must be "user" or "admin"',
+        error: 'INVALID_ROLE'
+      });
+    }
+    
+    const user = await User.findById(id);
+    
+    if (!user || !user.isActive) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: 'USER_NOT_FOUND'
+      });
+    }
+    
+    user.role = role;
+    await user.save();
+    
+    res.status(200).json({
+      success: true,
+      message: 'User role updated successfully',
+      data: { user: user.toPublicJSON() }
+    });
+  } catch (error) {
+    console.error('Update user role error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating user role',
+      error: 'UPDATE_ROLE_ERROR'
+    });
+  }
+};
+
+// Update user details (admin only)
+const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, phoneNumber, studentId, department, year } = req.body;
+    
+    const user = await User.findById(id);
+    
+    if (!user || !user.isActive) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: 'USER_NOT_FOUND'
+      });
+    }
+    
+    // Check if email is being changed and if it's already taken
+    if (email && email !== user.email) {
+      const existingUser = await User.findOne({ email: email.toLowerCase(), _id: { $ne: id } });
+      if (existingUser) {
+        return res.status(409).json({
+          success: false,
+          message: 'Email already exists',
+          error: 'EMAIL_EXISTS'
+        });
+      }
+    }
+    
+    // Update fields
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
+    if (studentId !== undefined) user.studentId = studentId;
+    if (department !== undefined) user.department = department;
+    if (year !== undefined) user.year = year;
+    
+    await user.save();
+    
+    res.status(200).json({
+      success: true,
+      message: 'User updated successfully',
+      data: { user: user.toPublicJSON() }
+    });
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating user',
+      error: 'UPDATE_USER_ERROR'
+    });
+  }
+};
+
+// Deactivate user (soft delete)
+const deactivateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const user = await User.findById(id);
+    
+    if (!user || !user.isActive) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: 'USER_NOT_FOUND'
+      });
+    }
+    
+    // Don't allow admins to deactivate themselves
+    if (user._id.toString() === req.user._id.toString()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot deactivate your own account',
+        error: 'CANNOT_DEACTIVATE_SELF'
+      });
+    }
+    
+    user.isActive = false;
+    await user.save();
+    
+    res.status(200).json({
+      success: true,
+      message: 'User deactivated successfully',
+      data: { user: user.toPublicJSON() }
+    });
+  } catch (error) {
+    console.error('Deactivate user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deactivating user',
+      error: 'DEACTIVATE_USER_ERROR'
+    });
+  }
+};
+
+// Reactivate user
+const reactivateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const user = await User.findById(id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+        error: 'USER_NOT_FOUND'
+      });
+    }
+    
+    user.isActive = true;
+    await user.save();
+    
+    res.status(200).json({
+      success: true,
+      message: 'User reactivated successfully',
+      data: { user: user.toPublicJSON() }
+    });
+  } catch (error) {
+    console.error('Reactivate user error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error reactivating user',
+      error: 'REACTIVATE_USER_ERROR'
+    });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getDetailedAnalytics,
-  getActivitySummary
+  getActivitySummary,
+  getAllUsers,
+  getUserById,
+  updateUserRole,
+  updateUser,
+  deactivateUser,
+  reactivateUser
 };

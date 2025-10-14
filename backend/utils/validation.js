@@ -42,19 +42,25 @@ const validateEvent = (data) => {
   const schema = Joi.object({
     title: Joi.string().max(100).required(),
     description: Joi.string().max(2000).required(),
-    date: Joi.date().greater('now').required(),
+    date: Joi.alternatives().try(
+      Joi.date().greater('now'),
+      Joi.string().isoDate()
+    ).required(),
     time: Joi.string().required(),
     venue: Joi.string().max(200).required(),
     speaker: Joi.object({
-      name: Joi.string().max(100).optional(),
-      designation: Joi.string().max(150).optional(),
-      bio: Joi.string().max(1000).optional(),
-      image: Joi.string().optional()
-    }).optional(),
+      name: Joi.string().max(100).allow('').optional(),
+      designation: Joi.string().max(150).allow('').optional(),
+      bio: Joi.string().max(1000).allow('').optional(),
+      image: Joi.string().allow('').optional()
+    }).allow(null).optional(),
     category: Joi.string().valid('workshop', 'seminar', 'competition', 'social', 'meeting', 'other').optional(),
     maxAttendees: Joi.number().min(1).max(1000).optional(),
     registrationRequired: Joi.boolean().optional(),
-    registrationDeadline: Joi.date().optional(),
+    registrationDeadline: Joi.alternatives().try(
+      Joi.date(),
+      Joi.string().isoDate()
+    ).optional(),
     tags: Joi.array().items(Joi.string().max(30)).optional(),
     images: Joi.array().items(
       Joi.object({
@@ -69,16 +75,16 @@ const validateEvent = (data) => {
 };
 
 // Gallery item validation
-const validateGalleryItem = (data) => {
+const validateGalleryItem = (data, hasFile = false) => {
   const schema = Joi.object({
     title: Joi.string().max(100).required(),
-    description: Joi.string().max(500).optional(),
-    imageUrl: Joi.string().required(),
-    thumbnailUrl: Joi.string().optional(),
+    description: Joi.string().max(500).allow('').optional(),
+    imageUrl: hasFile ? Joi.string().allow('').optional() : Joi.string().required(),
+    thumbnailUrl: Joi.string().allow('').optional(),
     category: Joi.string().valid('event', 'workshop', 'seminar', 'competition', 'social', 'achievement', 'other').optional(),
-    eventName: Joi.string().max(100).optional(),
+    eventName: Joi.string().max(100).allow('').optional(),
     date: Joi.date().optional(),
-    photographer: Joi.string().max(100).optional(),
+    photographer: Joi.string().max(100).allow('').optional(),
     tags: Joi.array().items(Joi.string().max(30)).optional(),
     isFeatured: Joi.boolean().optional()
   });

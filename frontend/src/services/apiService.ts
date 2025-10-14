@@ -77,7 +77,18 @@ class ApiService {
     } = options;
 
     const url = `${this.baseURL}${endpoint}`;
-    const headers = this.buildHeaders(customHeaders);
+    let headers = this.buildHeaders(customHeaders);
+
+    // Handle FormData - don't set Content-Type, let browser handle it
+    let requestBody: any = body;
+    if (body instanceof FormData) {
+      // Remove Content-Type header for FormData to let browser set boundary
+      const { 'Content-Type': contentType, ...headersWithoutContentType } = headers;
+      headers = headersWithoutContentType;
+      requestBody = body;
+    } else if (body) {
+      requestBody = JSON.stringify(body);
+    }
 
     // Create AbortController for timeout
     const controller = new AbortController();
@@ -87,7 +98,7 @@ class ApiService {
       const response = await fetch(url, {
         method,
         headers,
-        body: body ? JSON.stringify(body) : undefined,
+        body: requestBody,
         signal: controller.signal,
       });
 

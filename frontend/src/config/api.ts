@@ -53,6 +53,7 @@ export const API_ENDPOINTS = {
     GET_ALL: '/api/gallery',
     GET_ONE: (id: string) => `/api/gallery/${id}`,
     CREATE: '/api/gallery',
+    UPDATE: (id: string) => `/api/gallery/${id}`,
     DELETE: (id: string) => `/api/gallery/${id}`,
     UPLOAD: '/api/gallery/upload',
   },

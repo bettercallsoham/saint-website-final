@@ -88,9 +88,43 @@ const getGalleryById = async (req, res) => {
 // Create new gallery item (Admin only)
 const createGalleryItem = async (req, res) => {
   try {
-    // Validate input data
-    const { error } = validateGalleryItem(req.body);
+    console.log('Received gallery data:', req.body);
+    console.log('Received file:', req.file);
+    
+    // Handle image upload or URL
+    let imageUrl = req.body.imageUrl;
+    
+    // If a file was uploaded, use the uploaded file path
+    if (req.file) {
+      // Create the URL path for the uploaded file
+      imageUrl = `/uploads/gallery/${req.file.filename}`;
+    }
+    
+    // Ensure we have either uploaded file or URL
+    if (!imageUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'Either upload an image file or provide an image URL',
+        error: 'IMAGE_REQUIRED'
+      });
+    }
+    
+    // Prepare validation data (without uploadedBy for validation)
+    const validationData = {
+      title: req.body.title,
+      description: req.body.description,
+      imageUrl: imageUrl,
+      category: req.body.category || 'event',
+      eventName: req.body.eventName || '',
+      photographer: req.body.photographer || '',
+      isFeatured: req.body.isFeatured === 'true' || req.body.isFeatured === true
+    };
+    
+    // Validate the data (skip imageUrl validation if file was uploaded)
+    const { error } = validateGalleryItem(validationData, !!req.file);
     if (error) {
+      console.log('Gallery validation error:', error.details[0]);
+      console.log('Item data being validated:', validationData);
       return res.status(400).json({
         success: false,
         message: 'Validation error',
@@ -98,8 +132,9 @@ const createGalleryItem = async (req, res) => {
       });
     }
     
+    // Prepare final gallery item data with uploadedBy
     const itemData = {
-      ...req.body,
+      ...validationData,
       uploadedBy: req.user._id
     };
     
@@ -130,9 +165,29 @@ const updateGalleryItem = async (req, res) => {
   try {
     const { id } = req.params;
     
+    // Prepare update data
+    const updateData = {
+      title: req.body.title,
+      description: req.body.description,
+      category: req.body.category,
+      eventName: req.body.eventName,
+      photographer: req.body.photographer,
+      isFeatured: req.body.isFeatured === 'true' || req.body.isFeatured === true
+    };
+    
+    // Handle image update
+    if (req.file) {
+      // If new file uploaded, use it
+      updateData.imageUrl = `/uploads/gallery/${req.file.filename}`;
+    } else if (req.body.imageUrl) {
+      // If URL provided, use it
+      updateData.imageUrl = req.body.imageUrl;
+    }
+    // If neither provided, keep existing image
+    
     const item = await Gallery.findOneAndUpdate(
       { _id: id, isActive: true },
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     ).populate('uploadedBy', 'name email')
      .populate('event', 'title date');
