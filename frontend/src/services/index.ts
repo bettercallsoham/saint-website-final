@@ -26,6 +26,7 @@ export { membersApi } from './membersApi';
 export type {
   Member,
   CreateMemberData,
+  MembersResponse,
 } from './membersApi';
 
 // Contact API
@@ -40,6 +41,7 @@ export { galleryApi } from './galleryApi';
 export type {
   GalleryItem,
   CreateGalleryItemData,
+  GalleryResponse,
 } from './galleryApi';
 
 // Database API

@@ -21,6 +21,17 @@ export interface Member {
   isActive: boolean;
 }
 
+// Members response type to match backend structure
+export interface MembersResponse {
+  members: Member[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
 export interface CreateMemberData {
   name: string;
   email: string;
@@ -40,8 +51,8 @@ export interface CreateMemberData {
 // Members API Functions
 export const membersApi = {
   // Get all members
-  getAll: async (): Promise<ApiResponse<Member[]>> => {
-    return apiService.get<Member[]>(API_ENDPOINTS.MEMBERS.GET_ALL);
+  getAll: async (): Promise<ApiResponse<MembersResponse>> => {
+    return apiService.get<MembersResponse>(API_ENDPOINTS.MEMBERS.GET_ALL);
   },
 
   // Get single member by ID

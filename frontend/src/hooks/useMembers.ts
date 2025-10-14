@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { membersApi, Member, CreateMemberData } from '../services';
+import { membersApi, Member, CreateMemberData, MembersResponse } from '../services';
 import { toast } from 'sonner';
 
 // Query Keys
@@ -19,7 +19,11 @@ export const useMembers = () => {
       if (!response.success) {
         throw new Error(response.message || 'Failed to fetch members');
       }
-      return response.data || [];
+      // Extract the members array from the nested response structure
+      // Backend returns { data: { members: [...], pagination: {...} } }
+      const membersData = response.data?.members || [];
+      // Ensure we return an array
+      return Array.isArray(membersData) ? membersData : [];
     },
     retry: 3,
     staleTime: 10 * 60 * 1000, // 10 minutes (members data changes less frequently)

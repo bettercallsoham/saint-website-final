@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { galleryApi, GalleryItem, CreateGalleryItemData } from '../services';
+import { galleryApi, GalleryItem, CreateGalleryItemData, GalleryResponse } from '../services';
 import { toast } from 'sonner';
 
 // Query Keys
@@ -19,7 +19,11 @@ export const useGallery = () => {
       if (!response.success) {
         throw new Error(response.message || 'Failed to fetch gallery items');
       }
-      return response.data || [];
+      // Extract the gallery array from the nested response structure
+      // Backend returns { data: { gallery: [...], pagination: {...} } }
+      const galleryData = response.data?.gallery || [];
+      // Ensure we return an array
+      return Array.isArray(galleryData) ? galleryData : [];
     },
     retry: 3,
     staleTime: 10 * 60 * 1000, // 10 minutes

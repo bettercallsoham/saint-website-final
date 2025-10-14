@@ -5,40 +5,50 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import Navigation from "@/components/Navigation";
+import { useCurrentUser, useAdminRegister } from "@/hooks/useAuth";
 import { Shield, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 const AdminRegister = () => {
   const [step, setStep] = useState<'verify' | 'register'>('verify');
   const [secretKey, setSecretKey] = useState("");
   const [showSecretKey, setShowSecretKey] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    name: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    adminCode: ""
   });
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { isAuthenticated } = useCurrentUser();
+  const adminRegisterMutation = useAdminRegister();
 
-  // Secret admin verification key (in production, this would be environment-based)
-  const ADMIN_SECRET = "SAINT_ADMIN_2025_SECURE";
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      toast.info("You are already logged in!");
+      navigate("/admin/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Secret admin verification key (must match backend ADMIN_CODE)
+  const ADMIN_SECRET = "saint-admin-2024";
 
   useEffect(() => {
-    // Add some obfuscation - if someone lands here without knowing the route, redirect them
-    const hasAdminIntent = sessionStorage.getItem('admin_intent');
-    if (!hasAdminIntent) {
-      navigate('/register');
-    }
-  }, [navigate]);
+    // Set admin intent when accessing this page directly
+    sessionStorage.setItem('admin_intent', 'true');
+  }, []);
 
   const handleSecretVerification = (e: React.FormEvent) => {
     e.preventDefault();
     if (secretKey === ADMIN_SECRET) {
       setStep('register');
+      setFormData(prev => ({ ...prev, adminCode: secretKey }));
       sessionStorage.setItem('admin_verified', 'true');
     } else {
-      alert("Invalid secret key. Only verified administrators can access this page.");
+      toast.error("Invalid secret key. Only verified administrators can access this page.");
       setSecretKey("");
     }
   };
@@ -52,54 +62,52 @@ const AdminRegister = () => {
 
   const handleRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
     // Basic validation
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!");
-      setIsLoading(false);
+      toast.error("Passwords don't match!");
+      return;
+    }
+
+    if (!formData.name || !formData.email || !formData.password || !formData.adminCode) {
+      toast.error("Please fill in all required fields");
       return;
     }
 
     try {
       // Use the admin registration API
       const adminData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        name: formData.name,
         email: formData.email,
         password: formData.password,
-        confirmPassword: formData.confirmPassword,
-        adminSecret: ADMIN_SECRET
+        adminCode: formData.adminCode
       };
 
-      // TODO: Implement actual admin registration logic with API call
-      console.log("Admin registration attempt:", adminData);
+      const result = await adminRegisterMutation.mutateAsync(adminData);
       
-      // Simulate API call for now
-      setTimeout(() => {
-        setIsLoading(false);
-        alert("Admin account created successfully!");
+      if (result.success) {
         sessionStorage.removeItem('admin_verified');
         sessionStorage.removeItem('admin_intent');
-        navigate('/login');
-      }, 1000);
+        navigate('/admin/dashboard');
+      }
     } catch (error) {
-      setIsLoading(false);
-      alert("Failed to create admin account. Please try again.");
+      // Error is handled by the useAdminRegister hook
       console.error("Admin registration error:", error);
     }
   };
 
   if (step === 'verify') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-saint-bg via-saint-bgSecondary to-saint-bg flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <Navigation />
+        <div className="flex items-center justify-center p-4 pt-24">
         <Card className="w-full max-w-md border-red-200 shadow-xl">
           <CardHeader className="space-y-1 text-center">
             <div className="mx-auto w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mb-4">
               <Shield className="h-8 w-8 text-white" />
             </div>
             <CardTitle className="text-2xl text-saint-title">
-              Admin Access Required
+              🔐 Admin Registration Portal
             </CardTitle>
             <CardDescription className="text-center">
               This is a restricted area. Only verified administrators can proceed.
@@ -143,12 +151,15 @@ const AdminRegister = () => {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-saint-bg via-saint-bgSecondary to-saint-bg flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <Navigation />
+      <div className="flex items-center justify-center p-4 pt-24">
       <Card className="w-full max-w-md border-red-200 shadow-xl">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
@@ -166,31 +177,17 @@ const AdminRegister = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleRegistration} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  placeholder="John"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  placeholder="Doe"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="John Doe"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+              />
             </div>
 
             <div className="space-y-2">
@@ -232,12 +229,28 @@ const AdminRegister = () => {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="adminCode">Admin Code (Verified)</Label>
+              <Input
+                id="adminCode"
+                name="adminCode"
+                type="text"
+                placeholder="Admin verification code"
+                value={formData.adminCode}
+                readOnly
+                className="bg-gray-100 text-gray-600"
+              />
+              <p className="text-xs text-green-600">
+                ✓ Admin code verified successfully
+              </p>
+            </div>
+
             <Button 
               type="submit" 
               className="w-full bg-red-500 hover:bg-red-600 text-white" 
-              disabled={isLoading}
+              disabled={adminRegisterMutation.isPending}
             >
-              {isLoading ? "Creating Admin Account..." : "Create Administrator Account"}
+              {adminRegisterMutation.isPending ? "Creating Admin Account..." : "Create Administrator Account"}
             </Button>
           </form>
           
@@ -251,6 +264,7 @@ const AdminRegister = () => {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };

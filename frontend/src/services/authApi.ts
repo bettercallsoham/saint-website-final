@@ -8,34 +8,34 @@ export interface LoginCredentials {
 }
 
 export interface RegisterData {
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   password: string;
-  confirmPassword: string;
-  studentId: string;
-  year: string;
-  department: string;
-}
-
-export interface AdminRegisterData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  adminSecret: string;
-}
-
-export interface User {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: 'user' | 'admin';
+  phoneNumber?: string;
   studentId?: string;
   year?: string;
   department?: string;
+}
+
+export interface AdminRegisterData {
+  name: string;
+  email: string;
+  password: string;
+  adminCode: string;
+}
+
+export interface User {
+  _id: string;
+  name: string;
+  email: string;
+  role: 'user' | 'admin';
+  phoneNumber?: string;
+  studentId?: string;
+  year?: string;
+  department?: string;
+  isActive: boolean;
+  joinedAt: string;
+  lastLogin?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -43,13 +43,11 @@ export interface User {
 export interface AuthResponse {
   user: User;
   token: string;
-  refreshToken: string;
 }
 
 export interface UpdateProfileData {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
+  name?: string;
+  phoneNumber?: string;
   studentId?: string;
   year?: string;
   department?: string;
@@ -57,35 +55,42 @@ export interface UpdateProfileData {
 
 // Auth API Functions
 export const authApi = {
-  // Login user
+  // Login user (regular user)
   login: async (credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> => {
-    const response = await apiService.post<AuthResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials);
+    const response = await apiService.post<AuthResponse>(API_ENDPOINTS.AUTH.USER_LOGIN, credentials);
     
     // Store token if login successful
     if (response.success && response.data?.token) {
       apiService.setAuthToken(response.data.token);
+      // Store user data in localStorage for easy access
+      localStorage.setItem('user_data', JSON.stringify(response.data.user));
     }
     
     return response;
   },
 
-  // Validate token
-  validate: async (): Promise<ApiResponse<User>> => {
-    return apiService.get<User>(API_ENDPOINTS.AUTH.VALIDATE);
-  },
-
-  // Get token info
-  getTokenInfo: async (): Promise<ApiResponse<User>> => {
-    return apiService.get<User>(API_ENDPOINTS.AUTH.TOKEN_INFO);
+  // Login admin
+  adminLogin: async (credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> => {
+    const response = await apiService.post<AuthResponse>(API_ENDPOINTS.AUTH.ADMIN_LOGIN, credentials);
+    
+    // Store token if login successful
+    if (response.success && response.data?.token) {
+      apiService.setAuthToken(response.data.token);
+      // Store user data in localStorage for easy access
+      localStorage.setItem('user_data', JSON.stringify(response.data.user));
+    }
+    
+    return response;
   },
 
   // Register user
   register: async (userData: RegisterData): Promise<ApiResponse<AuthResponse>> => {
-    const response = await apiService.post<AuthResponse>(API_ENDPOINTS.AUTH.REGISTER, userData);
+    const response = await apiService.post<AuthResponse>(API_ENDPOINTS.AUTH.USER_REGISTER, userData);
     
     // Store token if registration successful
     if (response.success && response.data?.token) {
       apiService.setAuthToken(response.data.token);
+      localStorage.setItem('user_data', JSON.stringify(response.data.user));
     }
     
     return response;
@@ -93,14 +98,12 @@ export const authApi = {
 
   // Register admin
   adminRegister: async (adminData: AdminRegisterData): Promise<ApiResponse<AuthResponse>> => {
-    const response = await apiService.post<AuthResponse>(API_ENDPOINTS.AUTH.REGISTER, {
-      ...adminData,
-      isAdmin: true,
-    });
+    const response = await apiService.post<AuthResponse>(API_ENDPOINTS.AUTH.ADMIN_REGISTER, adminData);
     
     // Store token if registration successful
     if (response.success && response.data?.token) {
       apiService.setAuthToken(response.data.token);
+      localStorage.setItem('user_data', JSON.stringify(response.data.user));
     }
     
     return response;
@@ -108,23 +111,20 @@ export const authApi = {
 
   // Get current user profile
   getProfile: async (): Promise<ApiResponse<User>> => {
-    return apiService.get<User>(API_ENDPOINTS.AUTH.ME);
+    const user = authApi.getCurrentUser();
+    const endpoint = user?.role === 'admin' ? API_ENDPOINTS.AUTH.ADMIN_ME : API_ENDPOINTS.AUTH.USER_ME;
+    return apiService.get<User>(endpoint);
   },
 
   // Update user profile
   updateProfile: async (updates: UpdateProfileData): Promise<ApiResponse<User>> => {
-    return apiService.put<User>(API_ENDPOINTS.AUTH.PROFILE, updates);
-  },
-
-  // Refresh authentication token
-  refreshToken: async (): Promise<ApiResponse<{ token: string; refreshToken: string }>> => {
-    const response = await apiService.post<{ token: string; refreshToken: string }>(
-      API_ENDPOINTS.AUTH.REFRESH
-    );
+    const user = authApi.getCurrentUser();
+    const endpoint = user?.role === 'admin' ? API_ENDPOINTS.AUTH.ADMIN_PROFILE : API_ENDPOINTS.AUTH.USER_PROFILE;
+    const response = await apiService.put<User>(endpoint, updates);
     
-    // Store new token if refresh successful
-    if (response.success && response.data?.token) {
-      apiService.setAuthToken(response.data.token);
+    // Update stored user data if successful
+    if (response.success && response.data) {
+      localStorage.setItem('user_data', JSON.stringify(response.data));
     }
     
     return response;
@@ -132,16 +132,57 @@ export const authApi = {
 
   // Logout user
   logout: async (): Promise<ApiResponse<void>> => {
-    const response = await apiService.post<void>(API_ENDPOINTS.AUTH.LOGOUT);
-    
-    // Remove token regardless of response
+    try {
+      const user = authApi.getCurrentUser();
+      const endpoint = user?.role === 'admin' ? API_ENDPOINTS.AUTH.ADMIN_LOGOUT : API_ENDPOINTS.AUTH.USER_LOGOUT;
+      const response = await apiService.post<void>(endpoint);
+      
+      // Remove token and user data regardless of response
+      apiService.removeAuthToken();
+      localStorage.removeItem('user_data');
+      
+      return response;
+    } catch (error) {
+      // If API call fails (invalid token, etc.), still clear local storage
+      apiService.removeAuthToken();
+      localStorage.removeItem('user_data');
+      
+      // Return a success response since we've cleared the local state
+      return {
+        success: true,
+        message: 'Logged out locally',
+        data: undefined
+      };
+    }
+  },
+
+  // Force logout (clears local storage without API call)
+  forceLogout: (): void => {
     apiService.removeAuthToken();
-    
-    return response;
+    localStorage.removeItem('user_data');
   },
 
   // Check if user is authenticated
   isAuthenticated: (): boolean => {
-    return apiService['getAuthToken']() !== null;
+    return localStorage.getItem('auth_token') !== null;
+  },
+
+  // Get stored user data
+  getCurrentUser: (): User | null => {
+    const userData = localStorage.getItem('user_data');
+    return userData ? JSON.parse(userData) : null;
+  },
+
+  // Check if current user is admin
+  isAdmin: (): boolean => {
+    const user = authApi.getCurrentUser();
+    return user?.role === 'admin';
+  },
+
+  // Debug function to clear all auth state
+  clearAuthState: (): void => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
+    console.log('Auth state cleared successfully');
   },
 };

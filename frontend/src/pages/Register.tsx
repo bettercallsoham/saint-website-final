@@ -1,17 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
-import { useRegister } from "@/hooks/useAuth";
+import { useRegister, useCurrentUser } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
+    name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -21,6 +20,15 @@ const Register = () => {
   });
   const navigate = useNavigate();
   const registerMutation = useRegister();
+  const { isAuthenticated } = useCurrentUser();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      toast.info("You are already logged in! Please log out to create a new account.");
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -38,18 +46,16 @@ const Register = () => {
       return;
     }
 
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.studentId || !formData.year || !formData.department) {
+    if (!formData.name || !formData.email || !formData.password || !formData.studentId || !formData.year || !formData.department) {
       toast.error("Please fill in all required fields");
       return;
     }
 
     try {
       const result = await registerMutation.mutateAsync({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        name: formData.name,
         email: formData.email,
         password: formData.password,
-        confirmPassword: formData.confirmPassword,
         studentId: formData.studentId,
         year: formData.year,
         department: formData.department
@@ -85,31 +91,17 @@ const Register = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  placeholder="John"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  placeholder="Doe"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="John Doe"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+              />
             </div>
 
             <div className="space-y-2">
@@ -179,11 +171,12 @@ const Register = () => {
                   required
                 >
                   <option value="">Select Year</option>
-                  <option value="1">1st Year</option>
-                  <option value="2">2nd Year</option>
-                  <option value="3">3rd Year</option>
-                  <option value="4">4th Year</option>
-                  <option value="Graduate">Graduate</option>
+                  <option value="1st">1st Year</option>
+                  <option value="2nd">2nd Year</option>
+                  <option value="3rd">3rd Year</option>
+                  <option value="4th">4th Year</option>
+                  <option value="Alumni">Alumni</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
               <div className="space-y-2">

@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: 'https://saint-data.vercel.app',
+  BASE_URL: 'http://localhost:5000',
   TIMEOUT: 10000,
   HEADERS: {
     'Content-Type': 'application/json',
@@ -10,15 +10,26 @@ export const API_CONFIG = {
 // API Endpoints
 export const API_ENDPOINTS = {
   AUTH: {
-    LOGIN: '/api/auth/login',
-    REGISTER: '/api/auth/register',
-    VALIDATE: '/api/auth/validate',
-    TOKEN_INFO: '/api/auth/token-info',
-    TOKEN: '/api/auth/token',
-    ME: '/api/auth/me',
-    PROFILE: '/api/auth/profile',
-    REFRESH: '/api/auth/refresh',
-    LOGOUT: '/api/auth/logout',
+    // User auth endpoints
+    USER_LOGIN: '/api/users/login',
+    USER_REGISTER: '/api/users/register',
+    USER_ME: '/api/users/me',
+    USER_PROFILE: '/api/users/profile',
+    USER_LOGOUT: '/api/users/logout',
+    
+    // Admin auth endpoints
+    ADMIN_LOGIN: '/api/admin/auth/login',
+    ADMIN_REGISTER: '/api/admin/auth/register',
+    ADMIN_ME: '/api/admin/auth/me',
+    ADMIN_PROFILE: '/api/admin/auth/profile',
+    ADMIN_LOGOUT: '/api/admin/auth/logout',
+    
+    // Legacy endpoints (for backward compatibility during transition)
+    LOGIN: '/api/users/login',
+    REGISTER: '/api/users/register',
+    ME: '/api/users/me',
+    PROFILE: '/api/users/profile',
+    LOGOUT: '/api/users/logout',
   },
   EVENTS: {
     GET_ALL: '/api/events',
@@ -26,11 +37,14 @@ export const API_ENDPOINTS = {
     CREATE: '/api/events',
     UPDATE: (id: string) => `/api/events/${id}`,
     DELETE: (id: string) => `/api/events/${id}`,
+    RSVP: (id: string) => `/api/events/${id}/rsvp`,
+    GET_RSVPS: (id: string) => `/api/events/${id}/rsvps`,
   },
   MEMBERS: {
     GET_ALL: '/api/members',
     GET_ONE: (id: string) => `/api/members/${id}`,
     CREATE: '/api/members',
+    DELETE: (id: string) => `/api/members/${id}`,
   },
   CONTACT: {
     SUBMIT: '/api/contact',
@@ -39,6 +53,12 @@ export const API_ENDPOINTS = {
     GET_ALL: '/api/gallery',
     GET_ONE: (id: string) => `/api/gallery/${id}`,
     CREATE: '/api/gallery',
+    DELETE: (id: string) => `/api/gallery/${id}`,
+    UPLOAD: '/api/gallery/upload',
+  },
+  ADMIN: {
+    DASHBOARD: '/api/admin/dashboard',
+    STATS: '/api/admin/stats',
   },
   DATABASE: {
     STATUS: '/api/database/status',

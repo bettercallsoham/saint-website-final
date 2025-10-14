@@ -33,11 +33,22 @@ export interface CreateGalleryItemData {
   tags?: string[];
 }
 
+// Gallery response types to match backend structure
+export interface GalleryResponse {
+  gallery: GalleryItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
 // Gallery API Functions
 export const galleryApi = {
   // Get all gallery items
-  getAll: async (): Promise<ApiResponse<GalleryItem[]>> => {
-    return apiService.get<GalleryItem[]>(API_ENDPOINTS.GALLERY.GET_ALL);
+  getAll: async (): Promise<ApiResponse<GalleryResponse>> => {
+    return apiService.get<GalleryResponse>(API_ENDPOINTS.GALLERY.GET_ALL);
   },
 
   // Get single gallery item by ID

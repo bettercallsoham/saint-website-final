@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { eventsApi, Event, CreateEventData, UpdateEventData } from '../services';
+import { eventsApi, Event, CreateEventData, UpdateEventData } from '../services/eventsApi';
 import { toast } from 'sonner';
 
 // Query Keys
@@ -19,7 +19,9 @@ export const useEvents = () => {
       if (!response.success) {
         throw new Error(response.message || 'Failed to fetch events');
       }
-      return response.data || [];
+      // Ensure we return an array - backend returns {events: Event[], pagination: any}
+      const eventsData = response.data?.events;
+      return Array.isArray(eventsData) ? eventsData : [];
     },
     retry: 3,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -35,7 +37,8 @@ export const useEvent = (id: string) => {
       if (!response.success) {
         throw new Error(response.message || 'Failed to fetch event');
       }
-      return response.data;
+      // Backend returns {event: Event}
+      return response.data?.event;
     },
     enabled: !!id,
     retry: 3,

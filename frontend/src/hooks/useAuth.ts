@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authApi, User, LoginCredentials, RegisterData, AdminRegisterData, UpdateProfileData } from '../services';
+import { authApi, User, LoginCredentials, RegisterData, AdminRegisterData, UpdateProfileData } from '../services/authApi';
 import { toast } from 'sonner';
 
 // Query Keys
@@ -14,7 +14,7 @@ export const useProfile = () => {
   return useQuery({
     queryKey: AUTH_QUERY_KEYS.profile,
     queryFn: async () => {
-      const response = await authApi.getTokenInfo();
+      const response = await authApi.getProfile();
       if (!response.success) {
         throw new Error(response.message || 'Failed to fetch profile');
       }
@@ -31,23 +31,37 @@ export const useProfile = () => {
   });
 };
 
-// Validate current token
-export const useValidateToken = () => {
-  return useQuery({
-    queryKey: ['auth', 'validate'],
-    queryFn: async () => {
-      const response = await authApi.validate();
-      if (!response.success) {
-        throw new Error(response.message || 'Token validation failed');
+// Get current user from localStorage (faster than API call)
+export const useCurrentUser = () => {
+  const { data: user, isLoading, error } = useQuery({
+    queryKey: ['auth', 'currentUser'],
+    queryFn: () => {
+      const user = authApi.getCurrentUser();
+      if (!user) {
+        throw new Error('No user found');
       }
-      return response.data;
+      return user;
     },
     enabled: authApi.isAuthenticated(),
-    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: false, // Don't retry if user data is invalid
   });
+
+  // If there's an error and we think we're authenticated, clear the auth state
+  if (error && authApi.isAuthenticated()) {
+    console.warn('Invalid auth state detected, clearing...', error);
+    authApi.forceLogout();
+  }
+
+  return {
+    user,
+    isLoading,
+    isAuthenticated: authApi.isAuthenticated() && !error,
+    isAdmin: authApi.isAdmin() && !error,
+  };
 };
 
-// Login mutation
+// Login mutation (for regular users)
 export const useLogin = () => {
   const queryClient = useQueryClient();
 
@@ -63,6 +77,26 @@ export const useLogin = () => {
     },
     onError: (error: any) => {
       toast.error(error.message || 'Login failed');
+    },
+  });
+};
+
+// Admin login mutation
+export const useAdminLogin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (credentials: LoginCredentials) => authApi.adminLogin(credentials),
+    onSuccess: (data) => {
+      if (data.success) {
+        queryClient.setQueryData(AUTH_QUERY_KEYS.profile, data.data?.user);
+        toast.success('Admin login successful!');
+      } else {
+        toast.error(data.message || 'Admin login failed');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Admin login failed');
     },
   });
 };
@@ -143,7 +177,20 @@ export const useLogout = () => {
       // Still clear cache even if logout request fails
       queryClient.removeQueries({ queryKey: AUTH_QUERY_KEYS.profile });
       queryClient.clear();
-      toast.error(error.message || 'Logout failed');
+      // Don't show error message since we still logged out locally
+      toast.success('Logged out successfully');
     },
   });
+};
+
+// Force logout (for invalid tokens or cleanup)
+export const useForceLogout = () => {
+  const queryClient = useQueryClient();
+
+  return () => {
+    authApi.forceLogout();
+    queryClient.removeQueries({ queryKey: AUTH_QUERY_KEYS.profile });
+    queryClient.clear();
+    toast.success('Logged out successfully');
+  };
 };
