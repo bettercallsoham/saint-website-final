@@ -160,6 +160,84 @@ const createGalleryItem = async (req, res) => {
   }
 };
 
+// Create new gallery item with multiple images (Admin only)
+const createGalleryItemMultiple = async (req, res) => {
+  try {
+    console.log('Received gallery data:', req.body);
+    console.log('Received files:', req.files);
+    
+    // Handle multiple image uploads
+    let images = [];
+    let imageUrl = req.body.imageUrl; // Fallback single image URL
+    
+    // If files were uploaded, process them
+    if (req.files && req.files.length > 0) {
+      const primaryIndex = parseInt(req.body.primaryImageIndex) || 0;
+      
+      images = req.files.map((file, index) => ({
+        url: `/uploads/gallery/${file.filename}`,
+        caption: req.body[`caption_${index}`] || '',
+        isPrimary: index === primaryIndex,
+        metadata: {
+          originalName: file.originalname,
+          size: file.size,
+          format: file.mimetype
+        }
+      }));
+      
+      // Set primary image as main imageUrl for backward compatibility
+      imageUrl = images[primaryIndex]?.url || images[0].url;
+    }
+    
+    // Ensure we have either uploaded files or URL
+    if (!imageUrl && images.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Either upload image files or provide an image URL',
+        error: 'IMAGE_REQUIRED'
+      });
+    }
+    
+    // Prepare validation data
+    const validationData = {
+      title: req.body.title,
+      description: req.body.description,
+      imageUrl: imageUrl || '', // Keep for backward compatibility
+      category: req.body.category || 'event',
+      eventName: req.body.eventName || '',
+      photographer: req.body.photographer || '',
+      isFeatured: req.body.isFeatured === 'true' || req.body.isFeatured === true
+    };
+    
+    // Prepare final gallery item data with uploadedBy
+    const itemData = {
+      ...validationData,
+      images: images,
+      uploadedBy: req.user._id
+    };
+    
+    const item = new Gallery(itemData);
+    await item.save();
+    
+    const populatedItem = await Gallery.findById(item._id)
+      .populate('uploadedBy', 'name email')
+      .populate('event', 'title date');
+    
+    res.status(201).json({
+      success: true,
+      message: 'Gallery item with multiple images created successfully',
+      data: { item: populatedItem }
+    });
+  } catch (error) {
+    console.error('Create gallery item with multiple images error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error creating gallery item with multiple images',
+      error: 'CREATE_GALLERY_ITEM_MULTIPLE_ERROR'
+    });
+  }
+};
+
 // Update gallery item (Admin only)
 const updateGalleryItem = async (req, res) => {
   try {
@@ -311,6 +389,7 @@ module.exports = {
   getAllGallery,
   getGalleryById,
   createGalleryItem,
+  createGalleryItemMultiple,
   updateGalleryItem,
   deleteGalleryItem,
   toggleLike,

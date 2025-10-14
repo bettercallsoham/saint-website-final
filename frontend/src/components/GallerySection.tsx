@@ -107,24 +107,40 @@ const GallerySection = () => {
 
         {/* Featured Gallery Items */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          {featuredItems.length > 0 ? (
+            {featuredItems.length > 0 ? (
             featuredItems.map((item) => (
-              <Card key={item.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 overflow-hidden">
+              <Card key={item._id || item.id} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 overflow-hidden">
                 <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 relative overflow-hidden">
-                  {item.imageUrl ? (
-                    <img 
-                      src={item.imageUrl} 
-                      alt={item.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Image className="h-16 w-16 text-gray-400" />
-                    </div>
-                  )}
+                  {(() => {
+                    // Prioritize images array, then imageUrl
+                    const primaryImage = item.images?.find(img => img.isPrimary) || item.images?.[0];
+                    const imageUrl = primaryImage?.url || item.imageUrl;
+                    
+                    return imageUrl ? (
+                      <div className="relative w-full h-full">
+                        <img 
+                          src={imageUrl.startsWith('http') ? imageUrl : `http://localhost:5000${imageUrl}`}
+                          alt={item.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                        {item.images && item.images.length > 1 && (
+                          <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
+                            {item.images.length} photos
+                          </div>
+                        )}
+                      </div>
+                    ) : null;
+                  })()}
+                  
+                  {/* Fallback content */}
+                  <div className={`w-full h-full flex items-center justify-center ${(item.images?.[0]?.url || item.imageUrl) ? 'hidden' : ''}`}>
+                    <Image className="h-16 w-16 text-gray-400" />
+                  </div>
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20" />
                   <div className="absolute bottom-4 left-4">
                     <Badge className={`${getCategoryColor(item.category)} border`}>

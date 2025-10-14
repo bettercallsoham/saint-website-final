@@ -14,6 +14,7 @@ const Gallery = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { data: galleryItems, isLoading, error } = useGallery();
 
   // Extract unique categories from API data
@@ -25,6 +26,7 @@ const Gallery = () => {
 
   const openLightbox = (id: string) => {
     setSelectedImage(id);
+    setCurrentImageIndex(0);
     setLightboxOpen(true);
   };
 
@@ -36,7 +38,7 @@ const Gallery = () => {
   const navigateLightbox = (direction: 'prev' | 'next') => {
     if (!selectedImage) return;
     
-    const currentIndex = filteredItems.findIndex(item => item.id === selectedImage);
+    const currentIndex = filteredItems.findIndex(item => (item._id || item.id) === selectedImage);
     let newIndex;
     
     if (direction === 'prev') {
@@ -45,7 +47,24 @@ const Gallery = () => {
       newIndex = currentIndex < filteredItems.length - 1 ? currentIndex + 1 : 0;
     }
     
-    setSelectedImage(filteredItems[newIndex].id);
+    setSelectedImage(filteredItems[newIndex]._id || filteredItems[newIndex].id);
+    setCurrentImageIndex(0); // Reset to first image of new gallery item
+  };
+
+  const navigateGalleryImage = (direction: 'prev' | 'next') => {
+    if (!selectedImage) return;
+    
+    const item = filteredItems.find(i => (i._id || i.id) === selectedImage);
+    if (!item?.images || item.images.length <= 1) return;
+    
+    let newIndex;
+    if (direction === 'prev') {
+      newIndex = currentImageIndex > 0 ? currentImageIndex - 1 : item.images.length - 1;
+    } else {
+      newIndex = currentImageIndex < item.images.length - 1 ? currentImageIndex + 1 : 0;
+    }
+    
+    setCurrentImageIndex(newIndex);
   };
 
   const getCategoryColor = (category: string, isSelected: boolean = false) => {
@@ -224,26 +243,57 @@ const Gallery = () => {
         <div className="container mx-auto max-w-6xl">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredItems.map((item, index) => (
-              <FloatingElement key={item.id} delay={index * 100}>
+              <FloatingElement key={item._id || item.id || index} delay={index * 100}>
                 <Card 
                   className="overflow-hidden hover-shadow smooth-transition cursor-pointer group bg-white/80 backdrop-blur-sm border-0 shadow-lg"
-                  onClick={() => openLightbox(item.id)}
+                  onClick={() => openLightbox(item._id || item.id)}
                 >
-                  {/* Image placeholder with gradient and overlay */}
+                  {/* Image with fallback to gradient */}
                   <div className="relative h-56 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden">
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 smooth-transition"></div>
-                    {item.category === 'featured' && (
-                      <div className="absolute top-4 left-4">
-                        <Badge className="bg-yellow-500 text-white">Featured</Badge>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 flex items-center justify-center">
+                    {(() => {
+                      // Prioritize images array, then imageUrl
+                      const primaryImage = item.images?.find(img => img.isPrimary) || item.images?.[0];
+                      const imageUrl = primaryImage?.url || item.imageUrl;
+                      
+                      return imageUrl ? (
+                        <div className="relative w-full h-full">
+                          <img 
+                            src={imageUrl.startsWith('http') ? imageUrl : `http://localhost:5000${imageUrl}`}
+                            alt={item.title}
+                            className="w-full h-full object-cover group-hover:scale-105 smooth-transition"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              target.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                          {item.images && item.images.length > 1 && (
+                            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
+                              +{item.images.length - 1} more
+                            </div>
+                          )}
+                        </div>
+                      ) : null;
+                    })()}
+                    
+                    {/* Fallback content when no image or image fails to load */}
+                    <div className={`absolute inset-0 flex items-center justify-center ${(item.images?.[0]?.url || item.imageUrl) ? 'hidden' : ''}`}>
                       <div className="text-center text-white">
                         <Calendar className="h-16 w-16 mx-auto mb-4 opacity-70 group-hover:scale-110 smooth-transition" />
                         <p className="text-sm opacity-90 font-medium">{item.eventName || item.photographer || 'SAINT Gallery'}</p>
                       </div>
                     </div>
-                    <div className="absolute bottom-4 left-4 right-4">
+
+                    {/* Overlay */}
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 smooth-transition"></div>
+                    
+                    {item.category === 'featured' && (
+                      <div className="absolute top-4 left-4 z-10">
+                        <Badge className="bg-yellow-500 text-white">Featured</Badge>
+                      </div>
+                    )}
+                    
+                    <div className="absolute bottom-4 left-4 right-4 z-10">
                       <Badge 
                         variant="outline"
                         className="mb-2 bg-white/20 backdrop-blur-sm text-white border-white/30"
@@ -255,10 +305,12 @@ const Gallery = () => {
                   
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm text-gray-600 font-medium">{item.date}</span>
+                      <span className="text-sm text-gray-600 font-medium">
+                        {item.date ? format(new Date(item.date), 'MMM dd, yyyy') : 'No date'}
+                      </span>
                       <div className="flex items-center text-sm text-gray-600">
                         <Eye className="h-4 w-4 mr-1 text-blue-500" />
-                        {item.views} views
+                        {item.views || 0} views
                       </div>
                     </div>
                     
@@ -311,34 +363,101 @@ const Gallery = () => {
               <X className="h-6 w-6" />
             </Button>
 
-            {/* Navigation buttons */}
-            <Button
-              variant="ghost"
-              size="sm"
+            {/* Gallery item navigation buttons */}
+            <button
               onClick={() => navigateLightbox('prev')}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 z-10"
+              className="absolute left-8 bottom-8 bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 transition-all duration-200 hover:scale-105 z-30 shadow-lg"
             >
-              <ChevronLeft className="h-8 w-8" />
-            </Button>
+              <ChevronLeft className="h-5 w-5 mr-1 inline" />
+              Previous Gallery
+            </button>
             
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={() => navigateLightbox('next')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 z-10"
+              className="absolute right-8 bottom-8 bg-blue-600 text-white hover:bg-blue-700 rounded-lg px-4 py-2 transition-all duration-200 hover:scale-105 z-30 shadow-lg"
             >
-              <ChevronRight className="h-8 w-8" />
-            </Button>
+              Next Gallery
+              <ChevronRight className="h-5 w-5 ml-1 inline" />
+            </button>
 
             {/* Content */}
             {(() => {
-              const item = filteredItems.find(i => i.id === selectedImage);
+              const item = filteredItems.find(i => (i._id || i.id) === selectedImage);
               if (!item) return null;
               
               return (
                 <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
-                  <div className="h-96 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                    <div className="text-center text-white">
+                  <div className="h-96 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center relative overflow-hidden">
+                    {(() => {
+                      // Get current image to display
+                      let imageUrl = '';
+                      const hasMultipleImages = item.images && item.images.length > 0;
+                      
+                      if (hasMultipleImages) {
+                        imageUrl = item.images[currentImageIndex]?.url || '';
+                      } else {
+                        imageUrl = item.imageUrl || '';
+                      }
+                      
+                      return imageUrl ? (
+                        <div className="relative w-full h-full">
+                          <img 
+                            src={imageUrl.startsWith('http') ? imageUrl : `http://localhost:5000${imageUrl}`}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              target.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                          
+                          {/* Image navigation for multiple images */}
+                          {hasMultipleImages && item.images.length > 1 && (
+                            <>
+                              <button
+                                onClick={() => navigateGalleryImage('prev')}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/60 text-white hover:bg-black/80 rounded-full p-3 transition-all duration-200 hover:scale-110 z-20"
+                              >
+                                <ChevronLeft className="h-6 w-6" />
+                              </button>
+                              
+                              <button
+                                onClick={() => navigateGalleryImage('next')}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/60 text-white hover:bg-black/80 rounded-full p-3 transition-all duration-200 hover:scale-110 z-20"
+                              >
+                                <ChevronRight className="h-6 w-6" />
+                              </button>
+                              
+                              {/* Enhanced image counter */}
+                              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/80 text-white text-sm px-4 py-2 rounded-full backdrop-blur-sm">
+                                <span className="font-medium">{currentImageIndex + 1}</span>
+                                <span className="text-gray-300 mx-1">/</span>
+                                <span>{item.images.length}</span>
+                              </div>
+                              
+                              {/* Improved dots indicator */}
+                              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-2 bg-black/50 px-3 py-2 rounded-full backdrop-blur-sm">
+                                {item.images.map((_, index) => (
+                                  <button
+                                    key={index}
+                                    onClick={() => setCurrentImageIndex(index)}
+                                    className={`w-3 h-3 rounded-full transition-all duration-200 ${
+                                      index === currentImageIndex 
+                                        ? 'bg-white scale-125' 
+                                        : 'bg-white/50 hover:bg-white/75'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      ) : null;
+                    })()}
+                    
+                    {/* Fallback content */}
+                    <div className={`text-center text-white ${(item.images?.[0]?.url || item.imageUrl) ? 'hidden' : ''}`}>
                       <Calendar className="h-24 w-24 mx-auto mb-4 opacity-70" />
                       <p className="text-lg opacity-90 font-medium">{item.eventName || item.photographer || 'SAINT Gallery'}</p>
                     </div>
@@ -349,16 +468,27 @@ const Gallery = () => {
                       <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
                         {item.category}
                       </Badge>
-                      <span className="text-gray-600">{item.date}</span>
+                      <span className="text-gray-600">
+                        {item.date ? format(new Date(item.date), 'MMM dd, yyyy') : 'No date'}
+                      </span>
                     </div>
                     
                     <h2 className="text-3xl font-heading font-bold text-gray-900 mb-4">
                       {item.title}
                     </h2>
                     
-                    <p className="text-gray-700 mb-6 leading-relaxed">
-                      {item.description}
-                    </p>
+                    <div className="mb-6">
+                      <p className="text-gray-700 leading-relaxed">
+                        {item.description}
+                      </p>
+                      {item.images && item.images[currentImageIndex]?.caption && (
+                        <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                          <p className="text-sm text-gray-600 italic">
+                            <strong>Current Image:</strong> {item.images[currentImageIndex].caption}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                     
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>

@@ -6,16 +6,45 @@ import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Clock, Users, Play, ArrowRight, Loader2, CalendarDays } from "lucide-react";
 import { CustomArrow, FloatingElement } from "@/components/InteractiveElements";
 import InteractiveBackground from "@/components/InteractiveBackground";
-import { useEvents } from "@/hooks/useEvents";
+import { useEvents, useRsvpToEvent, useCancelRsvp } from "@/hooks/useEvents";
+import { useCurrentUser } from "@/hooks/useAuth";
 import { format } from "date-fns";
+import { toast } from "sonner";
+import { useState } from "react";
 
 const Events = () => {
   const { data: events, isLoading, error } = useEvents();
+  const { user, isAuthenticated } = useCurrentUser();
+  const rsvpMutation = useRsvpToEvent();
+  const cancelRsvpMutation = useCancelRsvp();
+  const [rsvpStates, setRsvpStates] = useState<Record<string, boolean>>({});
 
   // Separate upcoming and past events
   const now = new Date();
   const upcomingEvents = events?.filter(event => new Date(event.date) >= now) || [];
   const pastEvents = events?.filter(event => new Date(event.date) < now) || [];
+
+  // Handle RSVP
+  const handleRsvp = async (eventId: string) => {
+    if (!isAuthenticated) {
+      toast.error('Please log in to RSVP for events');
+      return;
+    }
+
+    const isCurrentlyRsvped = rsvpStates[eventId];
+    
+    try {
+      if (isCurrentlyRsvped) {
+        await cancelRsvpMutation.mutateAsync(eventId);
+        setRsvpStates(prev => ({ ...prev, [eventId]: false }));
+      } else {
+        await rsvpMutation.mutateAsync(eventId);
+        setRsvpStates(prev => ({ ...prev, [eventId]: true }));
+      }
+    } catch (error) {
+      console.error('RSVP error:', error);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -175,16 +204,16 @@ const Events = () => {
           <div className="grid lg:grid-cols-2 gap-8 mb-12">
             {upcomingEvents.length > 0 ? (
               upcomingEvents.slice(0, 4).map((event, index) => {
-                const isFull = event.maxParticipants && event.currentParticipants >= event.maxParticipants;
-                const isFillingFast = event.maxParticipants && event.currentParticipants >= event.maxParticipants * 0.8;
+                const isFull = event.maxAttendees && event.rsvpCount >= event.maxAttendees;
+                const isFillingFast = event.maxAttendees && event.rsvpCount >= event.maxAttendees * 0.8;
                 
                 return (
-                  <FloatingElement key={event.id} delay={index * 200}>
+                  <FloatingElement key={event._id} delay={index * 200}>
                     <Card className="overflow-hidden hover-shadow smooth-transition group bg-white/80 backdrop-blur-sm border-0 shadow-lg">
                       <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 relative overflow-hidden">
-                        {event.imageUrl && (
+                        {event.images && event.images.length > 0 && (
                           <img 
-                            src={event.imageUrl} 
+                            src={`http://localhost:5000${event.images.find(img => img.isPrimary)?.url || event.images[0].url}`} 
                             alt={event.title}
                             className="w-full h-full object-cover"
                             onError={(e) => {
@@ -198,7 +227,7 @@ const Events = () => {
                             variant={getStatusColor(event.status)}
                             className="mb-2"
                           >
-                            {getStatusText(event.status, event.currentParticipants, event.maxParticipants)}
+                            {getStatusText(event.status, event.rsvpCount, event.maxAttendees)}
                           </Badge>
                           <h3 className="text-2xl font-bold text-white mb-2">{event.title}</h3>
                         </div>
@@ -218,37 +247,58 @@ const Events = () => {
                           </div>
                           <div className="flex items-center">
                             <MapPin className="h-4 w-4 mr-2 text-blue-500" />
-                            {event.location}
+                            {event.venue}
                           </div>
                           <div className="flex items-center">
                             <Users className="h-4 w-4 mr-2 text-blue-500" />
-                            {event.maxParticipants 
-                              ? `${event.currentParticipants}/${event.maxParticipants}`
-                              : `${event.currentParticipants} registered`
+                            {event.maxAttendees 
+                              ? `${event.rsvpCount}/${event.maxAttendees}`
+                              : `${event.rsvpCount} registered`
                             }
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          <Badge variant="outline" className="text-xs bg-gray-50">
-                            {event.category}
-                          </Badge>
-                          {event.organizer && (
-                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                              {event.organizer}
-                            </Badge>
+                        <div className="space-y-2 mb-4">
+                          {event.speaker?.name && (
+                            <div className="flex items-center text-sm text-gray-700">
+                              <span className="font-semibold text-blue-600 mr-2">Speaker:</span>
+                              <span className="font-medium">{event.speaker.name}</span>
+                              {event.speaker.designation && (
+                                <span className="text-gray-500 ml-2">• {event.speaker.designation}</span>
+                              )}
+                            </div>
                           )}
+                          <div className="flex flex-wrap gap-2">
+                            <Badge variant="outline" className="text-xs bg-gray-50">
+                              {event.category}
+                            </Badge>
+                          </div>
                         </div>
 
-                        <Button 
-                          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl font-semibold group"
-                          disabled={isFull || event.status === 'cancelled'}
-                        >
-                          {isFull ? 'Registration Full' : 
-                           event.status === 'cancelled' ? 'Cancelled' :
-                           event.registrationRequired ? 'Register Now' : 'Learn More'}
-                          <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 smooth-transition" />
-                        </Button>
+                        {event.registrationRequired ? (
+                          <Button 
+                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl font-semibold group"
+                            disabled={isFull || event.status === 'cancelled' || rsvpMutation.isPending || cancelRsvpMutation.isPending}
+                            onClick={() => handleRsvp(event._id)}
+                          >
+                            {isFull ? 'Registration Full' : 
+                             event.status === 'cancelled' ? 'Cancelled' :
+                             rsvpStates[event._id] ? 'Cancel RSVP' : 'RSVP Now'}
+                            {(rsvpMutation.isPending || cancelRsvpMutation.isPending) ? (
+                              <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 smooth-transition" />
+                            )}
+                          </Button>
+                        ) : (
+                          <Button 
+                            className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 rounded-xl font-semibold group"
+                            disabled={event.status === 'cancelled'}
+                          >
+                            {event.status === 'cancelled' ? 'Cancelled' : 'Learn More'}
+                            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 smooth-transition" />
+                          </Button>
+                        )}
                       </CardContent>
                     </Card>
                   </FloatingElement>
@@ -280,7 +330,7 @@ const Events = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {pastEvents.length > 0 ? (
               pastEvents.slice(0, 6).map((event) => (
-                <div key={event.id} className="bg-white border-2 border-purple-300 rounded-xl shadow-xl hover:shadow-2xl hover:border-purple-400 transition-all duration-300 overflow-hidden">
+                <div key={event._id} className="bg-white border-2 border-purple-300 rounded-xl shadow-xl hover:shadow-2xl hover:border-purple-400 transition-all duration-300 overflow-hidden">
                   <div className="p-6">
                     <Badge className="mb-3 bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border border-purple-300">
                       Completed
@@ -294,7 +344,7 @@ const Events = () => {
                       </div>
                       <div className="flex items-center text-gray-900 font-semibold">
                         <Users className="h-5 w-5 mr-2 text-purple-600" />
-                        <span>{event.currentParticipants} attended</span>
+                        <span>{event.rsvpCount} attended</span>
                       </div>
                     </div>
                   </div>

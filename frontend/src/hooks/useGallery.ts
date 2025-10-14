@@ -65,3 +65,23 @@ export const useCreateGalleryItem = () => {
     },
   });
 };
+
+// Create gallery item with multiple images mutation (Admin only)
+export const useCreateGalleryItemMultiple = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (formData: FormData) => galleryApi.createMultiple(formData),
+    onSuccess: (data) => {
+      if (data.success) {
+        queryClient.invalidateQueries({ queryKey: GALLERY_QUERY_KEYS.all });
+        toast.success('Gallery item with multiple images added successfully!');
+      } else {
+        toast.error(data.message || 'Failed to add gallery item with multiple images');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to add gallery item with multiple images');
+    },
+  });
+};

@@ -92,6 +92,7 @@ const getEventById = async (req, res) => {
 const createEvent = async (req, res) => {
   try {
     console.log('Received event data:', req.body);
+    console.log('Received event image file:', req.file);
     
     // Validate input data
     const { error } = validateEvent(req.body);
@@ -108,6 +109,16 @@ const createEvent = async (req, res) => {
       ...req.body,
       createdBy: req.user._id
     };
+
+    // Handle event image if uploaded
+    if (req.file) {
+      const imageUrl = `/uploads/gallery/${req.file.filename}`;
+      eventData.images = [{
+        url: imageUrl,
+        caption: req.body.imageCaption || '',
+        isPrimary: true
+      }];
+    }
     
     const event = new Event(eventData);
     await event.save();
@@ -144,10 +155,23 @@ const updateEvent = async (req, res) => {
         error: error.details[0].message
       });
     }
+
+    // Prepare update data
+    const updateData = { ...req.body };
+    
+    // Handle image update if new file uploaded
+    if (req.file) {
+      const imageUrl = `/uploads/gallery/${req.file.filename}`;
+      updateData.images = [{
+        url: imageUrl,
+        caption: req.body.imageCaption || '',
+        isPrimary: true
+      }];
+    }
     
     const event = await Event.findOneAndUpdate(
       { _id: id, isActive: true },
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     ).populate('createdBy', 'name email');
     

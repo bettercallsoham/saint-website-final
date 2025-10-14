@@ -107,3 +107,45 @@ export const useDeleteEvent = () => {
     },
   });
 };
+
+// RSVP to event mutation
+export const useRsvpToEvent = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => eventsApi.rsvp(id),
+    onSuccess: (data, id) => {
+      if (data.success) {
+        queryClient.invalidateQueries({ queryKey: EVENTS_QUERY_KEYS.all });
+        queryClient.invalidateQueries({ queryKey: EVENTS_QUERY_KEYS.detail(id) });
+        toast.success('RSVP successful! See you at the event!');
+      } else {
+        toast.error(data.message || 'Failed to RSVP');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to RSVP. Please try again.');
+    },
+  });
+};
+
+// Cancel RSVP mutation
+export const useCancelRsvp = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => eventsApi.cancelRsvp(id),
+    onSuccess: (data, id) => {
+      if (data.success) {
+        queryClient.invalidateQueries({ queryKey: EVENTS_QUERY_KEYS.all });
+        queryClient.invalidateQueries({ queryKey: EVENTS_QUERY_KEYS.detail(id) });
+        toast.success('RSVP cancelled successfully');
+      } else {
+        toast.error(data.message || 'Failed to cancel RSVP');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to cancel RSVP');
+    },
+  });
+};

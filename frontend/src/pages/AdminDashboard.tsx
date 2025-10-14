@@ -44,6 +44,7 @@ import {
   useDeactivateUser,
   useReactivateUser
 } from "@/hooks/useAdminApi";
+import { useCreateGalleryItemMultiple } from "@/hooks/useGallery";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -73,6 +74,7 @@ const AdminDashboard = () => {
   const updateEventMutation = useUpdateEvent();
   const deleteEventMutation = useDeleteEvent();
   const createGalleryMutation = useCreateGalleryItem();
+  const createGalleryMultipleMutation = useCreateGalleryItemMultiple();
   const updateGalleryMutation = useUpdateGalleryItem();
   const deleteGalleryMutation = useDeleteGalleryItem();
   const updateUserRoleMutation = useUpdateUserRole();
@@ -108,9 +110,17 @@ const AdminDashboard = () => {
     isFeatured: false
   });
 
-  // File upload state
+  // File upload state for gallery
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string>('');
+  const [selectedMultipleFiles, setSelectedMultipleFiles] = useState<File[]>([]);
+  const [multipleFilePreviews, setMultipleFilePreviews] = useState<string[]>([]);
+  const [showMultipleForm, setShowMultipleForm] = useState(false);
+  const [primaryImageIndex, setPrimaryImageIndex] = useState(0);
+
+  // File upload state for events
+  const [selectedEventFile, setSelectedEventFile] = useState<File | null>(null);
+  const [eventFilePreview, setEventFilePreview] = useState<string>('');
 
   // Redirect if not admin
   useEffect(() => {
@@ -126,26 +136,92 @@ const AdminDashboard = () => {
   const handleEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Format data for backend
-      const formattedData = {
-        ...eventForm,
-        date: new Date(`${eventForm.date}T${eventForm.time}`).toISOString(),
-        maxAttendees: eventForm.maxAttendees ? parseInt(eventForm.maxAttendees) : undefined,
-        registrationDeadline: eventForm.registrationDeadline ? 
-          new Date(eventForm.registrationDeadline).toISOString() : undefined,
-        // Only include speaker if at least one field is filled
-        speaker: (eventForm.speaker.name || eventForm.speaker.designation || eventForm.speaker.bio) 
-          ? eventForm.speaker 
-          : undefined
-      };
-
       if (editingEvent) {
-        await updateEventMutation.mutateAsync({ id: editingEvent._id, data: formattedData });
+        // For editing, handle file upload separately if needed
+        let data;
+        if (selectedEventFile) {
+          const formData = new FormData();
+          formData.append('title', eventForm.title);
+          formData.append('description', eventForm.description);
+          formData.append('date', new Date(`${eventForm.date}T${eventForm.time}`).toISOString());
+          formData.append('time', eventForm.time);
+          formData.append('venue', eventForm.venue);
+          formData.append('category', eventForm.category);
+          if (eventForm.maxAttendees) formData.append('maxAttendees', eventForm.maxAttendees);
+          formData.append('registrationRequired', eventForm.registrationRequired.toString());
+          if (eventForm.registrationDeadline) {
+            formData.append('registrationDeadline', new Date(eventForm.registrationDeadline).toISOString());
+          }
+          
+          // Add speaker data if provided
+          if (eventForm.speaker.name || eventForm.speaker.designation || eventForm.speaker.bio) {
+            formData.append('speaker[name]', eventForm.speaker.name);
+            formData.append('speaker[designation]', eventForm.speaker.designation);
+            formData.append('speaker[bio]', eventForm.speaker.bio);
+          }
+          
+          formData.append('image', selectedEventFile);
+          data = formData;
+        } else {
+          // No file upload, use JSON data
+          data = {
+            ...eventForm,
+            date: new Date(`${eventForm.date}T${eventForm.time}`).toISOString(),
+            maxAttendees: eventForm.maxAttendees ? parseInt(eventForm.maxAttendees) : undefined,
+            registrationDeadline: eventForm.registrationDeadline ? 
+              new Date(eventForm.registrationDeadline).toISOString() : undefined,
+            speaker: (eventForm.speaker.name || eventForm.speaker.designation || eventForm.speaker.bio) 
+              ? eventForm.speaker 
+              : undefined
+          };
+        }
+        
+        await updateEventMutation.mutateAsync({ id: editingEvent._id, data });
         toast.success("Event updated successfully!");
       } else {
-        await createEventMutation.mutateAsync(formattedData);
+        // For new events, handle file upload
+        let data;
+        if (selectedEventFile) {
+          const formData = new FormData();
+          formData.append('title', eventForm.title);
+          formData.append('description', eventForm.description);
+          formData.append('date', new Date(`${eventForm.date}T${eventForm.time}`).toISOString());
+          formData.append('time', eventForm.time);
+          formData.append('venue', eventForm.venue);
+          formData.append('category', eventForm.category);
+          if (eventForm.maxAttendees) formData.append('maxAttendees', eventForm.maxAttendees);
+          formData.append('registrationRequired', eventForm.registrationRequired.toString());
+          if (eventForm.registrationDeadline) {
+            formData.append('registrationDeadline', new Date(eventForm.registrationDeadline).toISOString());
+          }
+          
+          // Add speaker data if provided
+          if (eventForm.speaker.name || eventForm.speaker.designation || eventForm.speaker.bio) {
+            formData.append('speaker[name]', eventForm.speaker.name);
+            formData.append('speaker[designation]', eventForm.speaker.designation);
+            formData.append('speaker[bio]', eventForm.speaker.bio);
+          }
+          
+          formData.append('image', selectedEventFile);
+          data = formData;
+        } else {
+          // No file upload, use JSON data
+          data = {
+            ...eventForm,
+            date: new Date(`${eventForm.date}T${eventForm.time}`).toISOString(),
+            maxAttendees: eventForm.maxAttendees ? parseInt(eventForm.maxAttendees) : undefined,
+            registrationDeadline: eventForm.registrationDeadline ? 
+              new Date(eventForm.registrationDeadline).toISOString() : undefined,
+            speaker: (eventForm.speaker.name || eventForm.speaker.designation || eventForm.speaker.bio) 
+              ? eventForm.speaker 
+              : undefined
+          };
+        }
+
+        await createEventMutation.mutateAsync(data);
         toast.success("Event created successfully!");
       }
+      
       setShowEventForm(false);
       setEditingEvent(null);
       resetEventForm();
@@ -205,6 +281,49 @@ const AdminDashboard = () => {
       resetGalleryForm();
     } catch (error) {
       toast.error("Failed to save gallery item");
+    }
+  };
+
+  const handleMultipleGallerySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (selectedMultipleFiles.length === 0) {
+      toast.error("Please select at least one image");
+      return;
+    }
+
+    if (!galleryForm.title.trim()) {
+      toast.error("Please enter a title");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      
+      // Add form fields
+      formData.append('title', galleryForm.title);
+      formData.append('description', galleryForm.description);
+      formData.append('category', galleryForm.category);
+      formData.append('eventName', galleryForm.eventName);
+      formData.append('photographer', galleryForm.photographer);
+      formData.append('isFeatured', galleryForm.isFeatured.toString());
+
+      // Add multiple images
+      selectedMultipleFiles.forEach((file) => {
+        formData.append('images', file);
+      });
+      
+      // Add primary image index
+      formData.append('primaryImageIndex', primaryImageIndex.toString());
+
+      await createGalleryMultipleMutation.mutateAsync(formData);
+      
+      setShowMultipleForm(false);
+      resetGalleryForm();
+      clearMultipleFiles();
+      toast.success("Gallery item with multiple images created successfully!");
+    } catch (error) {
+      toast.error("Failed to create gallery item with multiple images");
     }
   };
 
@@ -276,6 +395,8 @@ const AdminDashboard = () => {
         bio: ''
       }
     });
+    setSelectedEventFile(null);
+    setEventFilePreview('');
   };
 
   const resetGalleryForm = () => {
@@ -324,6 +445,111 @@ const AdminDashboard = () => {
   const removeSelectedFile = () => {
     setSelectedFile(null);
     setFilePreview('');
+  };
+
+  // Multiple files upload handling
+  const handleMultipleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    
+    if (files.length === 0) return;
+    
+    // Validate file types and sizes
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxFiles = 10;
+    
+    if (files.length > maxFiles) {
+      toast.error(`Maximum ${maxFiles} files allowed`);
+      return;
+    }
+    
+    const validFiles: File[] = [];
+    const previews: string[] = [];
+    
+    for (const file of files) {
+      if (!validTypes.includes(file.type)) {
+        toast.error(`${file.name}: Please select a valid image file (JPG, PNG, WebP)`);
+        continue;
+      }
+      
+      if (file.size > maxSize) {
+        toast.error(`${file.name}: File size must be less than 5MB`);
+        continue;
+      }
+      
+      validFiles.push(file);
+    }
+    
+    if (validFiles.length > 0) {
+      setSelectedMultipleFiles(validFiles);
+      setPrimaryImageIndex(0); // Reset to first image as primary
+      
+      // Create previews
+      validFiles.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previews.push(e.target?.result as string);
+          if (previews.length === validFiles.length) {
+            setMultipleFilePreviews([...previews]);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removeMultipleFile = (index: number) => {
+    const newFiles = selectedMultipleFiles.filter((_, i) => i !== index);
+    const newPreviews = multipleFilePreviews.filter((_, i) => i !== index);
+    setSelectedMultipleFiles(newFiles);
+    setMultipleFilePreviews(newPreviews);
+    
+    // Adjust primary index if necessary
+    if (primaryImageIndex >= newFiles.length) {
+      setPrimaryImageIndex(Math.max(0, newFiles.length - 1));
+    } else if (index <= primaryImageIndex) {
+      setPrimaryImageIndex(Math.max(0, primaryImageIndex - 1));
+    }
+  };
+
+  const clearMultipleFiles = () => {
+    setSelectedMultipleFiles([]);
+    setMultipleFilePreviews([]);
+    setPrimaryImageIndex(0);
+  };
+
+  // Event file upload handling
+  const handleEventFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        toast.error('Please select a valid image file (JPG, PNG, WebP)');
+        return;
+      }
+
+      // Validate file size (5MB max)
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
+
+      setSelectedEventFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setEventFilePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeSelectedEventFile = () => {
+    setSelectedEventFile(null);
+    setEventFilePreview('');
   };
 
   const editEvent = (event: any) => {
@@ -533,14 +759,26 @@ const AdminDashboard = () => {
                 <Card key={event._id}>
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold">{event.title}</h3>
-                        <p className="text-gray-600 mt-1">{event.description}</p>
-                        <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
-                          <span>📅 {new Date(event.date).toLocaleDateString()}</span>
-                          <span>🕒 {event.time}</span>
-                          <span>📍 {event.venue}</span>
-                          <Badge variant="outline">{event.category}</Badge>
+                      <div className="flex items-start gap-4 flex-1">
+                        {event.images && event.images.length > 0 && (
+                          <img 
+                            src={`http://localhost:5000${event.images.find((img: any) => img.isPrimary)?.url || event.images[0].url}`}
+                            alt={event.title}
+                            className="w-20 h-20 object-cover rounded-lg"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold">{event.title}</h3>
+                          <p className="text-gray-600 mt-1">{event.description}</p>
+                          <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                            <span>📅 {new Date(event.date).toLocaleDateString()}</span>
+                            <span>🕒 {event.time}</span>
+                            <span>📍 {event.venue}</span>
+                            <Badge variant="outline">{event.category}</Badge>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -648,10 +886,16 @@ const AdminDashboard = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Gallery Management</h2>
-              <Button onClick={() => setShowGalleryForm(true)} className="bg-red-500 hover:bg-red-600">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Image
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => setShowGalleryForm(true)} className="bg-red-500 hover:bg-red-600">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Single Image
+                </Button>
+                <Button onClick={() => setShowMultipleForm(true)} className="bg-purple-500 hover:bg-purple-600">
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  Add Multiple Images
+                </Button>
+              </div>
             </div>
 
             {/* Gallery Grid */}
@@ -663,7 +907,7 @@ const AdminDashboard = () => {
                 <Card key={item._id}>
                   <div className="aspect-video bg-gray-200 rounded-t-lg overflow-hidden">
                     <img 
-                      src={item.imageUrl} 
+                      src={item.imageUrl.startsWith('http') ? item.imageUrl : `http://localhost:5000${item.imageUrl}`} 
                       alt={item.title}
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -698,13 +942,26 @@ const AdminDashboard = () => {
           </div>
         )}        {/* Event Form Modal */}
         {showEventForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <CardHeader>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+            <Card className="w-full max-w-2xl my-8 max-h-fit">
+              <CardHeader className="sticky top-0 bg-white z-10 border-b flex flex-row items-center justify-between space-y-0 pb-4">
                 <CardTitle>{editingEvent ? 'Edit Event' : 'Create New Event'}</CardTitle>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowEventForm(false);
+                    setEditingEvent(null);
+                    resetEventForm();
+                  }}
+                  className="h-6 w-6 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleEventSubmit} className="space-y-4">
+              <CardContent className="max-h-[70vh] overflow-y-auto">
+                <form onSubmit={handleEventSubmit} className="space-y-4 pb-20">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="title">Event Title</Label>
@@ -787,6 +1044,55 @@ const AdminDashboard = () => {
                     />
                   </div>
 
+                  {/* Event Image Upload (Optional) */}
+                  <div className="space-y-4">
+                    <Label className="text-lg font-semibold">Event Image (Optional)</Label>
+                    <div className="space-y-4">
+                      {/* File Upload Input */}
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                        <div className="text-center">
+                          <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                          <div className="mt-4">
+                            <Label htmlFor="event-file-upload" className="cursor-pointer">
+                              <span className="mt-2 block text-sm font-medium text-gray-900">
+                                Upload event image
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                PNG, JPG, WebP up to 5MB
+                              </span>
+                            </Label>
+                            <Input
+                              id="event-file-upload"
+                              name="event-file-upload"
+                              type="file"
+                              accept="image/*"
+                              className="sr-only"
+                              onChange={handleEventFileSelect}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* File Preview */}
+                      {eventFilePreview && (
+                        <div className="relative">
+                          <img
+                            src={eventFilePreview}
+                            alt="Event Preview"
+                            className="w-full h-40 object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={removeSelectedEventFile}
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Speaker Section (Optional) */}
                   <div className="space-y-4">
                     <Label className="text-lg font-semibold">Speaker Information (Optional)</Label>
@@ -831,7 +1137,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="flex justify-end gap-4 pt-4">
+                  <div className="sticky bottom-0 bg-white border-t pt-4 mt-6 flex justify-end gap-4">
                     <Button 
                       type="button" 
                       variant="outline" 
@@ -1006,6 +1312,183 @@ const AdminDashboard = () => {
                     </Button>
                     <Button type="submit" className="bg-red-500 hover:bg-red-600">
                       {editingGallery ? 'Update Item' : 'Add Item'}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Multiple Images Gallery Form */}
+        {showMultipleForm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+              <CardHeader>
+                <CardTitle>Add Multiple Images to Gallery</CardTitle>
+                <CardDescription>
+                  Upload multiple images for a single gallery item. Perfect for event photo collections.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleMultipleGallerySubmit} className="space-y-6">
+                  {/* Basic Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="multiTitle">Title *</Label>
+                      <Input
+                        id="multiTitle"
+                        value={galleryForm.title}
+                        onChange={(e) => setGalleryForm(prev => ({ ...prev, title: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="multiCategory">Category</Label>
+                      <Select
+                        value={galleryForm.category}
+                        onValueChange={(value) => setGalleryForm(prev => ({ ...prev, category: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="event">Event</SelectItem>
+                          <SelectItem value="workshop">Workshop</SelectItem>
+                          <SelectItem value="seminar">Seminar</SelectItem>
+                          <SelectItem value="competition">Competition</SelectItem>
+                          <SelectItem value="social">Social</SelectItem>
+                          <SelectItem value="achievement">Achievement</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="multiDescription">Description</Label>
+                    <Textarea
+                      id="multiDescription"
+                      value={galleryForm.description}
+                      onChange={(e) => setGalleryForm(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Describe this gallery item..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="multiEventName">Event Name</Label>
+                      <Input
+                        id="multiEventName"
+                        value={galleryForm.eventName}
+                        onChange={(e) => setGalleryForm(prev => ({ ...prev, eventName: e.target.value }))}
+                        placeholder="Associated event name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="multiPhotographer">Photographer</Label>
+                      <Input
+                        id="multiPhotographer"
+                        value={galleryForm.photographer}
+                        onChange={(e) => setGalleryForm(prev => ({ ...prev, photographer: e.target.value }))}
+                        placeholder="Photographer name"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Multiple File Upload */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                    <div className="text-center">
+                      <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+                      <div className="mt-4">
+                        <Label htmlFor="multiple-file-upload" className="cursor-pointer">
+                          <span className="mt-2 block text-lg font-medium text-gray-900">
+                            Upload Multiple Images
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            PNG, JPG, WebP up to 5MB each, maximum 10 files
+                          </span>
+                        </Label>
+                        <Input
+                          id="multiple-file-upload"
+                          name="multiple-file-upload"
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="sr-only"
+                          onChange={handleMultipleFileSelect}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* File Previews */}
+                  {multipleFilePreviews.length > 0 && (
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h4 className="text-lg font-medium">Selected Images ({multipleFilePreviews.length})</h4>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={clearMultipleFiles}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          Clear All
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {multipleFilePreviews.map((preview, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={preview}
+                              alt={`Preview ${index + 1}`}
+                              className={`w-full h-32 object-cover rounded-lg cursor-pointer transition-all ${
+                                primaryImageIndex === index ? 'ring-4 ring-blue-500' : ''
+                              }`}
+                              onClick={() => setPrimaryImageIndex(index)}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeMultipleFile(index)}
+                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPrimaryImageIndex(index)}
+                              className={`absolute bottom-2 left-2 text-white text-xs px-2 py-1 rounded transition-all ${
+                                primaryImageIndex === index 
+                                  ? 'bg-blue-500' 
+                                  : 'bg-black/50 hover:bg-blue-500'
+                              }`}
+                            >
+                              {primaryImageIndex === index ? '★ Primary' : 'Set Primary'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowMultipleForm(false);
+                        resetGalleryForm();
+                        clearMultipleFiles();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="bg-purple-500 hover:bg-purple-600"
+                      disabled={selectedMultipleFiles.length === 0}
+                    >
+                      Add Gallery Item
                     </Button>
                   </div>
                 </form>

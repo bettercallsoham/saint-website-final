@@ -14,13 +14,35 @@ const gallerySchema = new mongoose.Schema({
   },
   imageUrl: {
     type: String,
-    required: [true, 'Image URL is required'],
     trim: true
   },
   thumbnailUrl: {
     type: String,
     trim: true
   },
+  images: [{
+    url: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    caption: {
+      type: String,
+      trim: true,
+      maxlength: [200, 'Caption cannot exceed 200 characters']
+    },
+    isPrimary: {
+      type: Boolean,
+      default: false
+    },
+    metadata: {
+      width: Number,
+      height: Number,
+      size: Number,
+      format: String,
+      originalName: String
+    }
+  }],
   category: {
     type: String,
     enum: ['event', 'workshop', 'seminar', 'competition', 'social', 'achievement', 'other'],

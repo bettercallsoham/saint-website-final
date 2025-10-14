@@ -3,12 +3,26 @@ import { API_ENDPOINTS } from '../config/api';
 
 // Gallery Types
 export interface GalleryItem {
-  id: string;
+  _id: string;
+  id?: string; // Keep for backward compatibility
   title: string;
   description?: string;
   imageUrl: string;
   thumbnailUrl?: string;
+  images?: Array<{
+    url: string;
+    caption?: string;
+    isPrimary?: boolean;
+    metadata?: {
+      width?: number;
+      height?: number;
+      size?: number;
+      format?: string;
+      originalName?: string;
+    };
+  }>;
   category: string;
+  event?: string;
   eventId?: string;
   eventName?: string;
   date: string;
@@ -16,6 +30,9 @@ export interface GalleryItem {
   tags?: string[];
   likes: number;
   views: number;
+  isActive?: boolean;
+  isFeatured?: boolean;
+  uploadedBy?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -48,7 +65,17 @@ export interface GalleryResponse {
 export const galleryApi = {
   // Get all gallery items
   getAll: async (): Promise<ApiResponse<GalleryResponse>> => {
-    return apiService.get<GalleryResponse>(API_ENDPOINTS.GALLERY.GET_ALL);
+    const response = await apiService.get<GalleryResponse>(API_ENDPOINTS.GALLERY.GET_ALL);
+    
+    // Transform _id to id for compatibility if needed
+    if (response.success && response.data?.gallery) {
+      response.data.gallery = response.data.gallery.map(item => ({
+        ...item,
+        id: item._id || item.id
+      }));
+    }
+    
+    return response;
   },
 
   // Get single gallery item by ID
@@ -59,6 +86,11 @@ export const galleryApi = {
   // Create new gallery item (Admin only)
   create: async (itemData: CreateGalleryItemData | FormData): Promise<ApiResponse<GalleryItem>> => {
     return apiService.post<GalleryItem>(API_ENDPOINTS.GALLERY.CREATE, itemData);
+  },
+
+  // Create gallery item with multiple images (Admin only)
+  createMultiple: async (formData: FormData): Promise<ApiResponse<GalleryItem>> => {
+    return apiService.post<GalleryItem>(`${API_ENDPOINTS.GALLERY.CREATE}/multiple`, formData);
   },
 
   // Update gallery item (Admin only)

@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate, requireAdmin, optionalAuth } = require('../middleware/auth');
-const { uploadSingle, handleUploadError } = require('../middleware/upload');
+const { uploadSingle, uploadMultiple, handleUploadError } = require('../middleware/upload');
 const {
   getAllGallery,
   getGalleryById,
   createGalleryItem,
+  createGalleryItemMultiple,
   updateGalleryItem,
   deleteGalleryItem,
   toggleLike,
@@ -22,6 +23,7 @@ router.post('/:id/like', authenticate, toggleLike);
 
 // Admin only routes
 router.post('/', authenticate, requireAdmin, uploadSingle, handleUploadError, createGalleryItem);
+router.post('/multiple', authenticate, requireAdmin, uploadMultiple, handleUploadError, createGalleryItemMultiple);
 router.put('/:id', authenticate, requireAdmin, uploadSingle, handleUploadError, updateGalleryItem);
 router.delete('/:id', authenticate, requireAdmin, deleteGalleryItem);
 

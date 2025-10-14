@@ -97,12 +97,12 @@ export const eventsApi = {
   },
 
   // Create new event (Admin only)
-  create: async (eventData: CreateEventData): Promise<ApiResponse<{event: Event}>> => {
+  create: async (eventData: CreateEventData | FormData): Promise<ApiResponse<{event: Event}>> => {
     return apiService.post(API_ENDPOINTS.EVENTS.CREATE, eventData);
   },
 
   // Update event (Admin only)
-  update: async (id: string, updates: UpdateEventData): Promise<ApiResponse<{event: Event}>> => {
+  update: async (id: string, updates: UpdateEventData | FormData): Promise<ApiResponse<{event: Event}>> => {
     return apiService.put(API_ENDPOINTS.EVENTS.UPDATE(id), updates);
   },
 
