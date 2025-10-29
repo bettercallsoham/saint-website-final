@@ -1,4 +1,4 @@
-# SAInT Club Website - Full Stack Application
+# SAInT Club Website.
 
 A modern, comprehensive web application for managing SAInT (Student Association in Technology) club activities, built with React TypeScript frontend and Node.js/Express backend.
 
