@@ -1,74 +1,21 @@
 const User = require('../models/User');
 const Member = require('../models/Member');
 
-// Get all members (combination of Users and Core Team Members)
+// Get all members (regular users only, not core team)
 const getAllMembers = async (req, res) => {
   try {
-    const { year, designation, limit, page, coreTeamOnly } = req.query;
+    const { year, designation, limit, page } = req.query;
     
-    if (coreTeamOnly === 'true') {
-      // Get core team members only
-      let query = { isActive: true, isCoreTeam: true };
-      
-      // Add filters
-      if (year) query.year = year;
-      if (designation) query.designation = designation;
-      
-      // Pagination
-      const pageNum = parseInt(page) || 1;
-      const limitNum = parseInt(limit) || 50;
-      const skip = (pageNum - 1) * limitNum;
-      
-      const members = await Member.find(query)
-        .sort({ displayOrder: 1, name: 1 })
-        .skip(skip)
-        .limit(limitNum);
-      
-      const total = await Member.countDocuments(query);
-      
-      return res.status(200).json({
-        success: true,
-        message: 'Core team members retrieved successfully',
-        data: {
-          members: members.map(member => ({
-            id: member._id,
-            _id: member._id,
-            name: member.name,
-            position: member.designation,
-            designation: member.designation,
-            year: member.year,
-            branch: member.branch,
-            bio: member.bio,
-            profileImage: member.profileImage,
-            skills: member.skills,
-            github: member.github,
-            linkedin: member.linkedin,
-            email: member.email,
-            phoneNumber: member.phoneNumber,
-            isActive: member.isActive,
-            role: member.designation,
-            studentId: `SAINT-${member.displayOrder.toString().padStart(3, '0')}`
-          })),
-          pagination: {
-            page: pageNum,
-            limit: limitNum,
-            total,
-            pages: Math.ceil(total / limitNum)
-          }
-        }
-      });
-    }
-    
-    // Get regular user members
-    let userQuery = { isActive: true };
+    // Get regular user members and exclude admin users
+    let userQuery = { isActive: true, role: { $ne: 'admin' } };
     
     // Add filters for users
     if (year) userQuery.year = year;
-    if (designation) userQuery.department = designation; // Map designation to department for users
+    if (designation) userQuery.department = designation;
     
     // Pagination
     const pageNum = parseInt(page) || 1;
-    const limitNum = parseInt(limit) || 20;
+    const limitNum = parseInt(limit) || 50;
     const skip = (pageNum - 1) * limitNum;
     
     const users = await User.find(userQuery)
@@ -86,16 +33,18 @@ const getAllMembers = async (req, res) => {
       name: user.name,
       position: user.role || 'Member',
       designation: user.role || 'Member',
-      year: user.year,
-      branch: user.department,
-      bio: `${user.name} is a ${user.year} student in ${user.department}`,
+      year: user.year || 'Not specified',
+      branch: user.department || 'Not specified',
+      bio: user.department && user.year ? 
+           `${user.name} is a ${user.year} student in ${user.department}` : 
+           `${user.name} is a member of SAInT club`,
       profileImage: user.profilePicture,
       skills: ['Technology', 'Innovation'],
       email: user.email,
       phoneNumber: user.phoneNumber,
       isActive: user.isActive,
       role: user.role || 'Member',
-      studentId: user.studentId
+      studentId: user.studentId || 'Not provided'
     }));
     
     res.status(200).json({
@@ -243,6 +192,8 @@ const getCoreTeamMembers = async (req, res) => {
     });
   }
 };
+
+
 
 // Get member statistics (Admin only)
 const getMemberStats = async (req, res) => {

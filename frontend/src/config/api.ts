@@ -42,6 +42,7 @@ export const API_ENDPOINTS = {
   },
   MEMBERS: {
     GET_ALL: '/api/members',
+    GET_CORE_TEAM: '/api/members/core-team',
     GET_ONE: (id: string) => `/api/members/${id}`,
     CREATE: '/api/members',
     DELETE: (id: string) => `/api/members/${id}`,

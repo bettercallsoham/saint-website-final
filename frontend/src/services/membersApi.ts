@@ -66,7 +66,7 @@ export const membersApi = {
 
   // Get core team members
   getCoreTeam: async (): Promise<ApiResponse<MembersResponse>> => {
-    return apiService.get<MembersResponse>(`${API_ENDPOINTS.MEMBERS.GET_ALL}/core-team`);
+    return apiService.get<MembersResponse>(API_ENDPOINTS.MEMBERS.GET_CORE_TEAM);
   },
 
   // Get single member by ID
