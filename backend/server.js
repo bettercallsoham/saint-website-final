@@ -37,6 +37,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:8080',
+  'https://saint-website-final-tau.vercel.app',
   process.env.FRONTEND_URL, // Add your Vercel frontend URL here
 ].filter(Boolean);
 
@@ -128,32 +129,25 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// Middleware to ensure database connection for each request (for Vercel)
-app.use(async (req, res, next) => {
-  try {
-    await connectToDatabase();
-    next();
-  } catch (error) {
-    console.error('Database connection middleware error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Database connection failed',
-      error: 'DATABASE_CONNECTION_ERROR',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
+// Root endpoint (before middleware to avoid DB connection requirement)
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'SAInT Backend API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      members: '/api/members',
+      coreTeam: '/api/members/core-team',
+      events: '/api/events',
+      gallery: '/api/gallery',
+      contact: '/api/contact'
+    },
+    documentation: 'Visit /api/health for server status'
+  });
 });
 
-// Routes
-app.use('/api/users', userAuthRoutes);
-app.use('/api/admin/auth', adminAuthRoutes);
-app.use('/api/events', eventsRoutes);
-app.use('/api/members', membersRoutes);
-app.use('/api/gallery', galleryRoutes);
-app.use('/api/contact', contactRoutes);
-app.use('/api/admin', adminRoutes);
-
-// Health check endpoint (bypasses database connection)
+// Health check endpoint (before middleware to avoid DB connection requirement)
 app.get('/api/health', (req, res) => {
   const dbStatus = mongoose.connection.readyState;
   const dbStates = {
@@ -177,23 +171,35 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Root endpoint
-app.get('/', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'SAInT Backend API',
-    version: '1.0.0',
-    endpoints: {
-      health: '/api/health',
-      members: '/api/members',
-      coreTeam: '/api/members/core-team',
-      events: '/api/events',
-      gallery: '/api/gallery',
-      contact: '/api/contact'
-    },
-    documentation: 'Visit /api/health for server status'
-  });
+// Middleware to ensure database connection for API routes (after health/root endpoints)
+app.use('/api', async (req, res, next) => {
+  // Skip database connection for health check
+  if (req.path === '/health') {
+    return next();
+  }
+  
+  try {
+    await connectToDatabase();
+    next();
+  } catch (error) {
+    console.error('Database connection middleware error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Database connection failed',
+      error: 'DATABASE_CONNECTION_ERROR',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 });
+
+// Routes
+app.use('/api/users', userAuthRoutes);
+app.use('/api/admin/auth', adminAuthRoutes);
+app.use('/api/events', eventsRoutes);
+app.use('/api/members', membersRoutes);
+app.use('/api/gallery', galleryRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
