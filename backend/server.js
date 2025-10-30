@@ -177,6 +177,24 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'SAInT Backend API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      members: '/api/members',
+      coreTeam: '/api/members/core-team',
+      events: '/api/events',
+      gallery: '/api/gallery',
+      contact: '/api/contact'
+    },
+    documentation: 'Visit /api/health for server status'
+  });
+});
+
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({
