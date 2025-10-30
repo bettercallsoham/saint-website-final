@@ -1,5 +1,7 @@
 const Gallery = require('../models/Gallery');
 const { validateGalleryItem } = require('../utils/validation');
+const cloudinary = require('../config/cloudinary');
+const fs = require('fs').promises;
 
 // Get all gallery items
 const getAllGallery = async (req, res) => {
@@ -91,13 +93,34 @@ const createGalleryItem = async (req, res) => {
     console.log('Received gallery data:', req.body);
     console.log('Received file:', req.file);
     
-    // Handle image upload or URL
     let imageUrl = req.body.imageUrl;
     
-    // If a file was uploaded, use the uploaded file path
+    // If a file was uploaded, upload to Cloudinary
     if (req.file) {
-      // Create the URL path for the uploaded file
-      imageUrl = `/uploads/gallery/${req.file.filename}`;
+      try {
+        // Upload to Cloudinary
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: 'saint-website/gallery',
+          resource_type: 'image',
+          transformation: [
+            { width: 1200, height: 800, crop: 'limit' },
+            { quality: 'auto', fetch_format: 'auto' }
+          ]
+        });
+        
+        imageUrl = result.secure_url;
+        
+        // Delete local file after uploading to Cloudinary
+        try {
+          await fs.unlink(req.file.path);
+        } catch (unlinkError) {
+          console.error('Error deleting local file:', unlinkError);
+        }
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError);
+        // If Cloudinary upload fails, fall back to local storage
+        imageUrl = `/uploads/gallery/${req.file.filename}`;
+      }
     }
     
     // Ensure we have either uploaded file or URL
@@ -166,26 +189,61 @@ const createGalleryItemMultiple = async (req, res) => {
     console.log('Received gallery data:', req.body);
     console.log('Received files:', req.files);
     
-    // Handle multiple image uploads
     let images = [];
-    let imageUrl = req.body.imageUrl; // Fallback single image URL
+    let imageUrl = req.body.imageUrl;
     
     // If files were uploaded, process them
     if (req.files && req.files.length > 0) {
       const primaryIndex = parseInt(req.body.primaryImageIndex) || 0;
       
-      images = req.files.map((file, index) => ({
-        url: `/uploads/gallery/${file.filename}`,
-        caption: req.body[`caption_${index}`] || '',
-        isPrimary: index === primaryIndex,
-        metadata: {
-          originalName: file.originalname,
-          size: file.size,
-          format: file.mimetype
+      // Upload all files to Cloudinary
+      for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        try {
+          const result = await cloudinary.uploader.upload(file.path, {
+            folder: 'saint-website/gallery',
+            resource_type: 'image',
+            transformation: [
+              { width: 1200, height: 800, crop: 'limit' },
+              { quality: 'auto', fetch_format: 'auto' }
+            ]
+          });
+          
+          images.push({
+            url: result.secure_url,
+            caption: req.body[`caption_${i}`] || '',
+            isPrimary: i === primaryIndex,
+            metadata: {
+              originalName: file.originalname,
+              size: file.size,
+              format: file.mimetype,
+              cloudinaryId: result.public_id
+            }
+          });
+          
+          // Delete local file after uploading
+          try {
+            await fs.unlink(file.path);
+          } catch (unlinkError) {
+            console.error('Error deleting local file:', unlinkError);
+          }
+        } catch (uploadError) {
+          console.error(`Cloudinary upload error for file ${i}:`, uploadError);
+          // Fall back to local storage for this file
+          images.push({
+            url: `/uploads/gallery/${file.filename}`,
+            caption: req.body[`caption_${i}`] || '',
+            isPrimary: i === primaryIndex,
+            metadata: {
+              originalName: file.originalname,
+              size: file.size,
+              format: file.mimetype
+            }
+          });
         }
-      }));
+      }
       
-      // Set primary image as main imageUrl for backward compatibility
+      // Set primary image as main imageUrl
       imageUrl = images[primaryIndex]?.url || images[0].url;
     }
     
@@ -202,7 +260,7 @@ const createGalleryItemMultiple = async (req, res) => {
     const validationData = {
       title: req.body.title,
       description: req.body.description,
-      imageUrl: imageUrl || '', // Keep for backward compatibility
+      imageUrl: imageUrl || '',
       category: req.body.category || 'event',
       eventName: req.body.eventName || '',
       photographer: req.body.photographer || '',
@@ -255,8 +313,30 @@ const updateGalleryItem = async (req, res) => {
     
     // Handle image update
     if (req.file) {
-      // If new file uploaded, use it
-      updateData.imageUrl = `/uploads/gallery/${req.file.filename}`;
+      try {
+        // Upload new image to Cloudinary
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: 'saint-website/gallery',
+          resource_type: 'image',
+          transformation: [
+            { width: 1200, height: 800, crop: 'limit' },
+            { quality: 'auto', fetch_format: 'auto' }
+          ]
+        });
+        
+        updateData.imageUrl = result.secure_url;
+        
+        // Delete local file
+        try {
+          await fs.unlink(req.file.path);
+        } catch (unlinkError) {
+          console.error('Error deleting local file:', unlinkError);
+        }
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError);
+        // Fall back to local storage
+        updateData.imageUrl = `/uploads/gallery/${req.file.filename}`;
+      }
     } else if (req.body.imageUrl) {
       // If URL provided, use it
       updateData.imageUrl = req.body.imageUrl;
