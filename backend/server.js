@@ -88,15 +88,47 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Database connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
+// Database connection with caching for serverless
+let cachedDb = null;
+
+async function connectToDatabase() {
+  if (cachedDb && mongoose.connection.readyState === 1) {
+    console.log('Using cached database connection');
+    return cachedDb;
+  }
+
+  try {
+    const db = await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
+    cachedDb = db;
     console.log('✅ Connected to MongoDB successfully');
-  })
-  .catch((error) => {
+    return db;
+  } catch (error) {
     console.error('❌ MongoDB connection error:', error);
-    process.exit(1);
-  });
+    throw error;
+  }
+}
+
+// Connect to database on startup (for local development)
+if (process.env.NODE_ENV !== 'production') {
+  connectToDatabase();
+}
+
+// Middleware to ensure database connection for each request (for Vercel)
+app.use(async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Database connection failed',
+      error: 'DATABASE_CONNECTION_ERROR'
+    });
+  }
+});
 
 // Routes
 app.use('/api/users', userAuthRoutes);
@@ -137,12 +169,15 @@ app.use((error, req, res, next) => {
   });
 });
 
-// Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
-});
+// Start server (only for local development, not on Vercel)
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV}`);
+    console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
+  });
+}
 
+// Export for Vercel
 module.exports = app;
