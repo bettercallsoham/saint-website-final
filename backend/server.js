@@ -49,7 +49,9 @@ const corsOptions = {
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      callback(null, true); // For now, allow all origins - restrict in production
+      // Log rejected origins for debugging
+      console.log('CORS rejected origin:', origin);
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
@@ -63,6 +65,8 @@ const corsOptions = {
     'Cache-Control',
     'Pragma'
   ],
+  exposedHeaders: ['Content-Length', 'Content-Type'],
+  maxAge: 86400, // 24 hours
   preflightContinue: false,
   optionsSuccessStatus: 204
 };
