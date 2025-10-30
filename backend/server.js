@@ -93,27 +93,39 @@ let cachedDb = null;
 
 async function connectToDatabase() {
   if (cachedDb && mongoose.connection.readyState === 1) {
-    console.log('Using cached database connection');
+    console.log('✅ Using cached database connection');
     return cachedDb;
   }
 
   try {
+    console.log('🔄 Connecting to MongoDB...');
+    console.log('MongoDB URI exists:', !!process.env.MONGODB_URI);
+    
     const db = await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 30000, // Increased to 30 seconds for cold starts
       socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+      minPoolSize: 2,
     });
+    
     cachedDb = db;
     console.log('✅ Connected to MongoDB successfully');
+    console.log('Database name:', mongoose.connection.db.databaseName);
     return db;
   } catch (error) {
-    console.error('❌ MongoDB connection error:', error);
+    console.error('❌ MongoDB connection error:', error.message);
+    console.error('Error name:', error.name);
+    console.error('Full error:', error);
+    cachedDb = null; // Clear cache on error
     throw error;
   }
 }
 
 // Connect to database on startup (for local development)
 if (process.env.NODE_ENV !== 'production') {
-  connectToDatabase();
+  connectToDatabase().catch(err => {
+    console.error('Failed to connect on startup:', err);
+  });
 }
 
 // Middleware to ensure database connection for each request (for Vercel)
@@ -122,10 +134,12 @@ app.use(async (req, res, next) => {
     await connectToDatabase();
     next();
   } catch (error) {
+    console.error('Database connection middleware error:', error);
     res.status(500).json({
       success: false,
       message: 'Database connection failed',
-      error: 'DATABASE_CONNECTION_ERROR'
+      error: 'DATABASE_CONNECTION_ERROR',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
@@ -139,13 +153,27 @@ app.use('/api/gallery', galleryRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Health check endpoint
+// Health check endpoint (bypasses database connection)
 app.get('/api/health', (req, res) => {
+  const dbStatus = mongoose.connection.readyState;
+  const dbStates = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting'
+  };
+  
   res.status(200).json({
     success: true,
     message: 'Server is running successfully',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV
+    environment: process.env.NODE_ENV,
+    database: {
+      status: dbStates[dbStatus],
+      readyState: dbStatus,
+      hasMongoUri: !!process.env.MONGODB_URI,
+      mongoUriPrefix: process.env.MONGODB_URI ? process.env.MONGODB_URI.substring(0, 20) + '...' : 'NOT SET'
+    }
   });
 });
 
