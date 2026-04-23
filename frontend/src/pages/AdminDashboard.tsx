@@ -571,6 +571,18 @@ const AdminDashboard = () => {
 
   const handleEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const eventDateTime = new Date(`${eventForm.date}T${eventForm.time}`);
+    if (Number.isNaN(eventDateTime.getTime())) {
+      toast.error("Please enter a valid event date and time");
+      return;
+    }
+
+    if (eventDateTime <= new Date()) {
+      toast.error("Event date and time must be in the future");
+      return;
+    }
+
     try {
       if (editingEvent) {
         // For editing, handle file upload separately if needed
