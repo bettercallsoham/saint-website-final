@@ -133,6 +133,15 @@ const createEvent = async (req, res) => {
     });
   } catch (error) {
     console.error('Create event error:', error);
+
+    if (error.name === 'ValidationError' || error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Invalid event data',
+        error: 'EVENT_VALIDATION_ERROR'
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: 'Error creating event',
@@ -190,6 +199,15 @@ const updateEvent = async (req, res) => {
     });
   } catch (error) {
     console.error('Update event error:', error);
+
+    if (error.name === 'ValidationError' || error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Invalid event data',
+        error: 'EVENT_VALIDATION_ERROR'
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: 'Error updating event',
