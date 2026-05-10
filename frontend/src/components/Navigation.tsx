@@ -170,14 +170,6 @@ const Navigation = () => {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <Link to="/register">
-                    <Button 
-                      size="sm" 
-                      className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium shadow-lg hover-shadow smooth-transition rounded-xl px-6"
-                    >
-                      Join Us
-                    </Button>
-                  </Link>
                 </>
               )}
             </div>
@@ -276,11 +268,6 @@ const Navigation = () => {
                       <Button variant="ghost" className="w-full justify-start font-medium rounded-xl hover-shadow text-purple-600 hover:text-purple-700">
                         <Settings className="h-4 w-4 mr-2" />
                         Admin Login
-                      </Button>
-                    </Link>
-                    <Link to="/register" onClick={() => setIsMobileMenuOpen(false)}>
-                      <Button className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 font-medium rounded-xl hover-shadow">
-                        Join Us
                       </Button>
                     </Link>
                   </>

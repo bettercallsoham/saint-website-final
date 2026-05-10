@@ -27,18 +27,9 @@ const HeroSection = () => {
               </p>
             </div>
 
+
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 items-center">
-              <Link to="/register">
-                <Button 
-                  size="lg" 
-                  className="group bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-8 py-4 rounded-2xl modern-shadow hover-shadow smooth-transition text-lg"
-                >
-                  Join SAInT Today
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 bounce-transition" />
-                </Button>
-              </Link>
-              
               <div className="flex items-center space-x-2">
                 <CustomArrow direction="right" />
                 <Link to="/about">
