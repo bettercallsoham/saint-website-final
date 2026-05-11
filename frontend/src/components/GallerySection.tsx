@@ -1,10 +1,18 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Award, ArrowRight, Loader2, Image } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
 import { useGallery } from "@/hooks/useGallery";
 import { format } from "date-fns";
+import { ArrowRight, Award, Image, Loader2, Users } from "lucide-react";
+import { Link } from "react-router-dom";
+
+const resolveGalleryImageUrl = (imageUrl: string) => {
+  if (imageUrl.startsWith('http') || imageUrl.startsWith('data:') || imageUrl.startsWith('blob:') || imageUrl.startsWith('/images/')) {
+    return imageUrl;
+  }
+
+  return `http://localhost:5000${imageUrl}`;
+};
 
 const GallerySection = () => {
   const { data: galleryItems, isLoading, error } = useGallery();
@@ -100,7 +108,7 @@ const GallerySection = () => {
                     return imageUrl ? (
                       <div className="relative w-full h-full">
                         <img 
-                          src={imageUrl.startsWith('http') ? imageUrl : `http://localhost:5000${imageUrl}`}
+                          src={resolveGalleryImageUrl(imageUrl)}
                           alt={item.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
