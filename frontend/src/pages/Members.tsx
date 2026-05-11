@@ -3,114 +3,123 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Github, Linkedin, Mail, Star, ArrowRight, ExternalLink, Loader2, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { FloatingElement, CustomArrow } from "@/components/InteractiveElements";
 import InteractiveBackground from "@/components/InteractiveBackground";
-import { useState } from "react";
-import { useMembers, useCoreTeamMembers } from "@/hooks/useMembers";
 
 const Members = () => {
-  const [hoveredMember, setHoveredMember] = useState<number | null>(null);
-  const { data: members, isLoading: isLoadingMembers, error: membersError } = useMembers();
-  const { data: coreTeamMembers, isLoading: isLoadingCoreTeam, error: coreTeamError } = useCoreTeamMembers();
+  // TY Members (Third Year) - Sorted Alphabetically
+  const tyMembers = [
+    { id: 1, name: "Aaryan Ranjan", year: "TY", branch: "IT", profileImage: null },
+    { id: 2, name: "Aditya Almane", year: "TY", branch: "IT", profileImage: null },
+    { id: 3, name: "Akshad Patil", year: "TY", branch: "IT", profileImage: null },
+    { id: 4, name: "Anisha Satendra Lokhande", year: "TY", branch: "IT", profileImage: null },
+    { id: 5, name: "Durva Bhushan Gajare", year: "TY", branch: "IT", profileImage: null },
+    { id: 6, name: "Hitesh Shivprasad Chavan", year: "TY", branch: "IT", profileImage: null },
+    { id: 7, name: "Nidhi Gaikwad", year: "TY", branch: "IT", profileImage: null },
+    { id: 8, name: "Prachi Janwadkar", year: "TY", branch: "IT", profileImage: null },
+    { id: 9, name: "Pramod Atul Kanthale", year: "TY", branch: "IT", profileImage: null },
+    { id: 10, name: "Prajkta Prasad Deshpande", year: "TY", branch: "IT", profileImage: null },
+    { id: 11, name: "Sanket Ramdas Shermale", year: "TY", branch: "IT", profileImage: null },
+    { id: 12, name: "Shlok Joshi", year: "TY", branch: "IT", profileImage: null },
+    { id: 13, name: "Shubhankar Badwe", year: "TY", branch: "IT", profileImage: null },
+    { id: 14, name: "Vansh Bipalliwar", year: "TY", branch: "IT", profileImage: null }
+  ];
 
-  const isLoading = isLoadingMembers || isLoadingCoreTeam;
-  const error = membersError || coreTeamError;
+  // SY Members (Second Year) - Sorted Alphabetically
+  const syMembers = [
+    { id: 15, name: "Anshuman Sandanshiv", year: "SY", branch: "IT", profileImage: null },
+    { id: 16, name: "Arush Padmavar", year: "SY", branch: "IT", profileImage: null },
+    { id: 17, name: "Aryan Jadhav", year: "SY", branch: "IT", profileImage: null },
+    { id: 18, name: "Daksh Zade", year: "SY", branch: "IT", profileImage: null },
+    { id: 19, name: "Devang Kale", year: "SY", branch: "IT", profileImage: null },
+    { id: 20, name: "Divyal Sarode", year: "SY", branch: "IT", profileImage: null },
+    { id: 21, name: "Ghansham Patil", year: "SY", branch: "IT", profileImage: null },
+    { id: 22, name: "Lakshit Sarode", year: "SY", branch: "IT", profileImage: null },
+    { id: 23, name: "Laukik Rathod", year: "SY", branch: "IT", profileImage: null },
+    { id: 24, name: "Madhura", year: "SY", branch: "IT", profileImage: null },
+    { id: 25, name: "Omkar Doifode", year: "SY", branch: "IT", profileImage: null },
+    { id: 26, name: "Payal Deore", year: "SY", branch: "IT", profileImage: null },
+    { id: 27, name: "Prachi Patil", year: "SY", branch: "IT", profileImage: null },
+    { id: 28, name: "Purva Shimpi", year: "SY", branch: "IT", profileImage: null },
+    { id: 29, name: "Riya Pardhi", year: "SY", branch: "IT", profileImage: null },
+    { id: 30, name: "Rudraksh Vasaikar", year: "SY", branch: "IT", profileImage: null },
+    { id: 31, name: "Sanchita Yelmate", year: "SY", branch: "IT", profileImage: null },
+    { id: 32, name: "Sayali Kottawar", year: "SY", branch: "IT", profileImage: null },
+    { id: 33, name: "Shreya Patil", year: "SY", branch: "IT", profileImage: null },
+    { id: 34, name: "Shital", year: "SY", branch: "IT", profileImage: null },
+    { id: 35, name: "Shivanand Potle", year: "SY", branch: "IT", profileImage: null },
+    { id: 36, name: "Shubham Sattegiri", year: "SY", branch: "IT", profileImage: null },
+    { id: 37, name: "Shrutika", year: "SY", branch: "IT", profileImage: null },
+    { id: 38, name: "Vaishnavi Kapratwar", year: "SY", branch: "IT", profileImage: null },
+    { id: 39, name: "Vinit Sharnagat", year: "SY", branch: "IT", profileImage: null },
+    { id: 40, name: "Yash Kalal", year: "SY", branch: "IT", profileImage: null },
+    { id: 41, name: "Yash Kore", year: "SY", branch: "IT", profileImage: null },
+    { id: 42, name: "Yash Patil", year: "SY", branch: "IT", profileImage: null },
+    { id: 43, name: "Zyan Ali", year: "SY", branch: "IT", profileImage: null }
+  ];
 
-  // Separate core team by designation hierarchy
-  const executivePositions = ['President', 'Vice-President', 'Faculty Advisor', 'Director Administration', 'Secretary', 'Treasurer'];
-  const executiveTeam = coreTeamMembers?.filter(member => 
-    executivePositions.includes(member.designation || member.position)
-  ) || [];
-
-  // Other core team members (non-executive positions)
-  const otherCoreMembers = coreTeamMembers?.filter(member => 
-    !executivePositions.includes(member.designation || member.position)
-  ) || [];
-
-  // Regular members (from User model)
-  const regularMembers = members?.filter(member => 
-    !['admin'].includes(member.role?.toLowerCase())
-  ) || [];
-
-  // Hardcoded fallback data for when API is not available
-  const fallbackExecutiveTeam = [
-    {
-      name: "Alex Chen",
-      position: "President",
-      year: "Senior",
-      major: "Computer Science",
-      bio: "Leading SAInT's vision and strategic initiatives. Passionate about AI and machine learning.",
-      github: "alexchen",
-      linkedin: "alex-chen-cs",
-      email: "alex.chen@university.edu",
-      avatar: "AC",
-      skills: ["AWS", "Docker", "Cybersecurity"],
-      projects: 12
+  // Executive Team (Core Leadership)
+  const executiveTeam = [
+    { 
+      id: 100, 
+      name: "Sanket Ramdas Shermale", 
+      designation: "President", 
+      year: "TY", 
+      branch: "IT", 
+      profileImage: null 
     },
-    {
-      name: "Sarah Johnson",
-      position: "Vice President",
-      year: "Junior",
-      major: "Software Engineering",
-      bio: "Coordinating events and member engagement. Loves full-stack development and UX design.",
-      github: "sarahjdev",
-      linkedin: "sarah-johnson-dev",
-      email: "sarah.j@university.edu",
-      avatar: "SJ",
-      skills: ["AWS", "Docker", "Cybersecurity"],
-      projects: 8
+    { 
+      id: 101, 
+      name: "Pramod Atul Kanthale", 
+      designation: "Vice President", 
+      year: "TY", 
+      branch: "IT", 
+      profileImage: null 
     },
-    {
-      name: "Michael Rodriguez",
-      position: "Technical Director",
-      year: "Senior",
-      major: "Computer Science",
-      bio: "Overseeing technical workshops and projects. Expert in cloud computing and DevOps.",
-      github: "mrodriguez",
-      linkedin: "michael-rodriguez-tech",
-      email: "m.rodriguez@university.edu",
-      avatar: "MR",
-      skills: ["AWS", "Docker", "Cybersecurity"],
-      projects: 15
+    { 
+      id: 102, 
+      name: "Anisha Satendra Lokhande", 
+      designation: "Treasurer", 
+      year: "TY", 
+      branch: "IT", 
+      profileImage: null 
     },
-    {
-      name: "Emily Zhang",
-      position: "Events Coordinator",
-      year: "Sophomore",
-      major: "IT",
-      bio: "Planning and executing amazing events. Interested in cybersecurity.",
-      github: "emilyzhang",
-      linkedin: "emily-zhang-is",
-      email: "emily.zhang@university.edu",
-      avatar: "EZ",
-      skills: ["AWS", "Docker", "Cybersecurity"],
-      projects: 6
+    { 
+      id: 103, 
+      name: "Hitesh Shivprasad Chavan", 
+      designation: "Secretary", 
+      year: "TY", 
+      branch: "IT", 
+      profileImage: null 
+    },
+    { 
+      id: 104, 
+      name: "Prajkta Prasad Deshpande", 
+      designation: "Event Director", 
+      year: "TY", 
+      branch: "IT", 
+      profileImage: null 
     }
   ];
 
-  // Calculate dynamic member stats from API data
-  const totalMembers = (members?.length || 0) + (coreTeamMembers?.length || 0);
+  // Calculate member stats from hardcoded data
+  const totalMembers = tyMembers.length + syMembers.length;
   const memberStats = [
     { 
       label: "Total Members", 
       value: totalMembers.toString(), 
-      description: "Active student members" 
-    },
-    { 
-      label: "Core Team", 
-      value: coreTeamMembers?.length?.toString() || "0", 
-      description: "Leadership & committee" 
+      description: "Active members" 
     },
     { 
       label: "Executive Team", 
-      value: executiveTeam?.length?.toString() || "0", 
-      description: "Leadership positions" 
+      value: executiveTeam.length.toString(), 
+      description: "Core leadership" 
     },
     { 
-      label: "Active Members", 
-      value: members?.filter(m => m.isActive)?.length?.toString() || "0", 
-      description: "Regular members" 
+      label: "All Batches", 
+      value: "2", 
+      description: "TY & SY members" 
     }
   ];
 
@@ -118,67 +127,6 @@ const Members = () => {
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen relative">
-        <InteractiveBackground />
-        <Navigation />
-        
-        <section className="pt-24 pb-16 px-4 relative z-10">
-          <div className="container mx-auto max-w-6xl">
-            <div className="text-center mb-16">
-              <h1 className="text-5xl md:text-6xl font-heading font-black leading-tight mb-6">
-                <span className="text-gray-900">Meet the</span>
-                <br />
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  SAInT Family
-                </span>
-              </h1>
-            </div>
-            
-            <div className="flex justify-center items-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-              <span className="ml-2 text-blue-600">Loading members...</span>
-            </div>
-          </div>
-        </section>
-        
-        <Footer />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen relative">
-        <InteractiveBackground />
-        <Navigation />
-        
-        <section className="pt-24 pb-16 px-4 relative z-10">
-          <div className="container mx-auto max-w-6xl">
-            <div className="text-center mb-16">
-              <h1 className="text-5xl md:text-6xl font-heading font-black leading-tight mb-6">
-                <span className="text-gray-900">Meet the</span>
-                <br />
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  SAInT Family
-                </span>
-              </h1>
-            </div>
-            
-            <div className="text-center py-12">
-              <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-4">Unable to load member information at this time.</p>
-              <p className="text-gray-500 text-sm">Please check back later or contact us if the problem persists.</p>
-            </div>
-          </div>
-        </section>
-        
-        <Footer />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen relative">
@@ -214,7 +162,7 @@ const Members = () => {
           </div>
 
           {/* Member Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-16">
             {memberStats.map((stat, index) => (
               <FloatingElement key={index} delay={index * 100}>
                 <Card className="text-center hover-shadow smooth-transition bg-white/80 backdrop-blur-sm border-0 shadow-lg">
@@ -232,121 +180,59 @@ const Members = () => {
         </div>
       </section>
 
-      {/* Executive Team */}
-      <section className="py-16 px-4 relative z-10">
+      {/* Executive Team (Core Leadership) */}
+      <section className="py-16 px-4 bg-gradient-to-br from-blue-50 to-indigo-50 relative z-10">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-heading font-bold text-gray-900 mb-4">Executive Team</h2>
-            <p className="text-xl text-gray-600">
-              Meet the dedicated leaders driving SAInT's mission forward.
+            <Badge variant="outline" className="mb-4 bg-blue-100 border-blue-300 text-blue-700 font-semibold">
+              Leadership
+            </Badge>
+            <h2 className="text-4xl font-heading font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+              Executive Team
+            </h2>
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+              Meet the core leaders driving SAInT's vision and mission.
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
             {executiveTeam.length > 0 ? (
-              executiveTeam.map((member, index) => (
-                <FloatingElement key={member.id} delay={index * 150}>
-                  <Card 
-                    className={`group cursor-pointer smooth-transition hover-shadow bg-white/80 backdrop-blur-sm border-0 shadow-lg overflow-hidden ${
-                      hoveredMember === index ? 'scale-105' : ''
-                    }`}
-                    onMouseEnter={() => setHoveredMember(index)}
-                    onMouseLeave={() => setHoveredMember(null)}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 smooth-transition"></div>
-                    
-                    <CardHeader className="relative z-10 text-center">
-                      <div className="relative mb-4">
-                        {member.profileImage ? (
-                          <img 
-                            src={member.profileImage} 
-                            alt={member.name}
-                            className="w-24 h-24 rounded-full mx-auto object-cover shadow-lg group-hover:shadow-xl smooth-transition"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                            }}
-                          />
-                        ) : null}
-                        <div className={`w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto flex items-center justify-center shadow-lg group-hover:shadow-xl smooth-transition ${member.profileImage ? 'hidden' : ''}`}>
-                          <span className="text-2xl font-bold text-white">
-                            {getInitials(member.name)}
-                          </span>
-                        </div>
+              executiveTeam.map((member) => (
+                <Card key={member.id} className="text-center bg-white/90 backdrop-blur-sm border-blue-200 hover:border-blue-400 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 shadow-lg overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 opacity-0 group-hover:opacity-100 smooth-transition"></div>
+                  <CardHeader className="relative z-10">
+                    <div className="relative">
+                      {member.profileImage ? (
+                        <img 
+                          src={member.profileImage} 
+                          alt={member.name}
+                          className="w-20 h-20 rounded-full mx-auto mb-3 object-cover shadow-lg group-hover:shadow-xl"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full mx-auto mb-3 flex items-center justify-center shadow-lg group-hover:shadow-xl ${member.profileImage ? 'hidden' : ''}`}>
+                        <span className="text-xl font-bold text-white">
+                          {getInitials(member.name)}
+                        </span>
                       </div>
-                      
-                      <CardTitle className="text-lg text-gray-900 font-heading mb-2">{member.name}</CardTitle>
-                      <div className="flex justify-center mb-3">
-                        <Badge variant="default" className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                          {member.designation || member.position}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-600 text-center">{member.year} - {member.branch}</p>
-                    </CardHeader>
-                    
-                    <CardContent className="relative z-10">
-                      {member.bio && (
-                        <p className="text-sm text-gray-700 mb-4 line-clamp-3">{member.bio}</p>
-                      )}
-                      
-                      <div className="mb-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-xs font-semibold text-gray-600">Skills</span>
-                          <span className="text-xs text-gray-500">ID: {member.studentId}</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {member.skills && member.skills.length > 0 ? (
-                            member.skills.slice(0, 3).map((skill, skillIndex) => (
-                              <Badge key={skillIndex} variant="outline" className="text-xs bg-gray-50">
-                                {skill}
-                              </Badge>
-                            ))
-                          ) : (
-                            <Badge variant="outline" className="text-xs bg-gray-50">
-                              {member.designation || member.role}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-center space-x-2">
-                        {member.github && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="p-2 hover:bg-blue-50 group/btn"
-                            onClick={() => window.open(`https://github.com/${member.github}`, '_blank')}
-                          >
-                            <Github className="h-4 w-4 group-hover/btn:text-blue-600 smooth-transition" />
-                          </Button>
-                        )}
-                        {member.linkedin && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="p-2 hover:bg-blue-50 group/btn"
-                            onClick={() => window.open(`https://linkedin.com/in/${member.linkedin}`, '_blank')}
-                          >
-                            <Linkedin className="h-4 w-4 group-hover/btn:text-blue-600 smooth-transition" />
-                          </Button>
-                        )}
-                        {member.email && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="p-2 hover:bg-blue-50 group/btn"
-                            onClick={() => window.open(`mailto:${member.email}`, '_blank')}
-                          >
-                            <Mail className="h-4 w-4 group-hover/btn:text-blue-600 smooth-transition" />
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </FloatingElement>
+                    </div>
+                    <CardTitle className="text-base font-semibold text-slate-800">{member.name}</CardTitle>
+                    <div className="flex justify-center mb-2">
+                      <Badge className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xs font-semibold px-3 py-1">
+                        {member.designation}
+                      </Badge>
+                    </div>
+                    <div className="text-center text-blue-600 font-medium text-sm">
+                      {member.year} - {member.branch}
+                    </div>
+                  </CardHeader>
+                </Card>
               ))
             ) : (
-              <div className="col-span-3 text-center py-12">
+              <div className="col-span-5 text-center py-12">
                 <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600">No executive team members found.</p>
               </div>
@@ -355,24 +241,22 @@ const Members = () => {
         </div>
       </section>
 
-      {/* Core Team Members */}
-      <section className="py-16 px-4 bg-gradient-to-br from-slate-50 to-blue-50 relative">
+      {/* TY Members (Third Year) */}
+      <section className="py-16 px-4 relative z-10">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
-            <Badge variant="outline" className="mb-4 bg-white/50 border-blue-200 text-blue-700">
-              Core Team
+            <Badge variant="outline" className="mb-4 bg-blue-50 border-blue-200 text-blue-700">
+              Third Year
             </Badge>
-            <h2 className="text-4xl font-heading font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-              Team Members
-            </h2>
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-              Dedicated team members working behind the scenes to make SAInT successful.
+            <h2 className="text-4xl font-heading font-bold text-gray-900 mb-4">TY Members</h2>
+            <p className="text-xl text-gray-600">
+              Meet our Third Year students driving SAInT forward.
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {otherCoreMembers.length > 0 ? (
-              otherCoreMembers.map((member, index) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {tyMembers.length > 0 ? (
+              tyMembers.map((member, index) => (
                 <Card key={member.id} className="text-center bg-white/80 backdrop-blur-sm border-slate-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 shadow-lg">
                   <CardHeader>
                     <div className="relative">
@@ -394,60 +278,41 @@ const Members = () => {
                       </div>
                     </div>
                     <CardTitle className="text-base font-semibold text-slate-800">{member.name}</CardTitle>
-                    <div className="flex justify-center mb-2">
-                      <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 text-xs">
-                        {member.designation || member.position}
-                      </Badge>
-                    </div>
                     <div className="text-center text-blue-600 font-semibold text-sm">
                       {member.year} - {member.branch}
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-1 justify-center">
-                      {member.skills && member.skills.length > 0 ? (
-                        member.skills.slice(0, 2).map((skill, techIndex) => (
-                          <Badge key={techIndex} variant="outline" className="text-xs bg-gray-50 border-gray-200 text-gray-700">
-                            {skill}
-                          </Badge>
-                        ))
-                      ) : (
-                        <Badge variant="outline" className="text-xs bg-gray-50 border-gray-200 text-gray-700">
-                          Team Member
-                        </Badge>
-                      )}
-                    </div>
-                  </CardContent>
                 </Card>
               ))
             ) : (
               <div className="col-span-4 text-center py-12">
                 <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No core team members found.</p>
-                <p className="text-gray-500 text-sm">Check back later for team profiles!</p>
+                <p className="text-gray-600">No TY members found.</p>
               </div>
             )}
           </div>
         </div>
       </section>
 
-      {/* Regular Members */}
-      {regularMembers.length > 0 && (
-        <section className="py-16 px-4 relative z-10">
-          <div className="container mx-auto max-w-6xl">
-            <div className="text-center mb-12">
-              <Badge variant="outline" className="mb-4 bg-white/80 backdrop-blur-sm">
-                Community Members
-              </Badge>
-              <h2 className="text-4xl font-heading font-bold text-gray-900 mb-4">Active Members</h2>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Our growing community of passionate tech enthusiasts.
-              </p>
-            </div>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {regularMembers.slice(0, 8).map((member, index) => (
-                <Card key={member.id} className="text-center bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+      {/* SY Members (Second Year) */}
+      <section className="py-16 px-4 bg-gradient-to-br from-slate-50 to-blue-50 relative">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-12">
+            <Badge variant="outline" className="mb-4 bg-white/50 border-blue-200 text-blue-700">
+              Second Year
+            </Badge>
+            <h2 className="text-4xl font-heading font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+              SY Members
+            </h2>
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+              Our Second Year members bringing fresh energy and ideas to SAInT.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-6">
+            {syMembers.length > 0 ? (
+              syMembers.map((member, index) => (
+                <Card key={member.id} className="text-center bg-white/80 backdrop-blur-sm border-slate-200 hover:border-blue-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 shadow-lg">
                   <CardHeader>
                     <div className="relative">
                       {member.profileImage ? (
@@ -461,48 +326,25 @@ const Members = () => {
                           }}
                         />
                       ) : null}
-                      <div className={`w-16 h-16 bg-gradient-to-r from-gray-400 to-gray-600 rounded-full mx-auto mb-3 flex items-center justify-center shadow-lg ${member.profileImage ? 'hidden' : ''}`}>
+                      <div className={`w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full mx-auto mb-3 flex items-center justify-center shadow-lg ${member.profileImage ? 'hidden' : ''}`}>
                         <span className="text-lg font-bold text-white">
                           {getInitials(member.name)}
                         </span>
                       </div>
                     </div>
-                    <CardTitle className="text-base font-semibold text-gray-800">{member.name}</CardTitle>
-                    <div className="text-center text-gray-600 font-semibold text-sm">
+                    <CardTitle className="text-sm font-semibold text-slate-800">{member.name}</CardTitle>
+                    <div className="text-center text-purple-600 font-semibold text-xs">
                       {member.year} - {member.branch}
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <Badge variant="outline" className="text-xs bg-gray-50 border-gray-200 text-gray-700">
-                      {member.role || 'Member'}
-                    </Badge>
-                  </CardContent>
                 </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Join Us Section */}
-      <section className="py-16 px-4 relative z-10">
-        <div className="container mx-auto max-w-4xl text-center">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-12 text-white shadow-2xl">
-            <h2 className="text-4xl font-heading font-bold text-white mb-6">Ready to Join Our Community?</h2>
-            <p className="text-xl text-blue-50 mb-8 max-w-2xl mx-auto leading-relaxed">
-              Become part of a supportive network of tech enthusiasts. 
-              Learn, build, and grow with like-minded students.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
-                Join SAInT Today
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button variant="secondary" size="lg" className="border-white text-blue-600 bg-white hover:bg-blue-50 px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
-                Learn More
-                <ExternalLink className="ml-2 h-5 w-5" />
-              </Button>
-            </div>
+              ))
+            ) : (
+              <div className="col-span-5 text-center py-12">
+                <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No SY members found.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>

@@ -114,13 +114,6 @@ const AboutSection = () => {
           </div>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button asChild size="lg" className="group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
-              <Link to="/contact">
-                Join SAINT Today
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </Button>
-            
             <Button asChild variant="outline" size="lg" className="group border-2 border-blue-200 hover:border-blue-300 text-blue-600 hover:text-blue-700 px-8 py-3 rounded-xl hover:bg-blue-50 transition-all duration-300">
               <Link to="/events">
                 Explore Events

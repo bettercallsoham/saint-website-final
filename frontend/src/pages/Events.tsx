@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, MapPin, Clock, Users, Play, ArrowRight, Loader2, CalendarDays } from "lucide-react";
+import { Calendar, MapPin, Clock, Users, Play, ArrowRight, Loader2, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { CustomArrow, FloatingElement } from "@/components/InteractiveElements";
 import InteractiveBackground from "@/components/InteractiveBackground";
 import { VideoHighlights } from "@/components/VideoPlayer";
@@ -14,10 +14,199 @@ import { useEvents, useRsvpToEvent, useCancelRsvp } from "@/hooks/useEvents";
 import { useCurrentUser } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+// Event Card Component with Image Carousel
+const EventCard = ({ event }: { event: any }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    if (!event.images || event.images.length === 0) return;
+
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % event.images.length);
+    }, 3000); // Rotate every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [event.images]);
+
+  const handlePrevImage = () => {
+    if (event.images) {
+      setCurrentImageIndex((prev) => (prev - 1 + event.images.length) % event.images.length);
+    }
+  };
+
+  const handleNextImage = () => {
+    if (event.images) {
+      setCurrentImageIndex((prev) => (prev + 1) % event.images.length);
+    }
+  };
+
+  return (
+    <div className="bg-white border-2 border-purple-300 rounded-xl shadow-xl hover:shadow-2xl hover:border-purple-400 transition-all duration-300 overflow-hidden">
+      {/* Image Carousel */}
+      {event.images && event.images.length > 0 && (
+        <div className="relative h-64 bg-gray-200 overflow-hidden">
+          <img
+            src={event.images[currentImageIndex]}
+            alt={`${event.title} - Image ${currentImageIndex + 1}`}
+            className="w-full h-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+          />
+          
+          {/* Navigation Arrows */}
+          {event.images.length > 1 && (
+            <>
+              <button
+                onClick={handlePrevImage}
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                onClick={handleNextImage}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </>
+          )}
+
+          {/* Image Indicators */}
+          {event.images.length > 1 && (
+            <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-2">
+              {event.images.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentImageIndex(idx)}
+                  className={`h-2 rounded-full transition-all ${
+                    idx === currentImageIndex
+                      ? 'bg-white w-6'
+                      : 'bg-white/50 w-2 hover:bg-white/70'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Event Information */}
+      <div className="p-6">
+        <Badge className="mb-3 bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border border-purple-300">
+          Completed
+        </Badge>
+        <h3 className="text-2xl text-gray-900 font-bold mb-4 font-heading">{event.title}</h3>
+        <p className="text-gray-800 mb-6 font-medium text-lg leading-relaxed">{event.description}</p>
+
+        <div className="flex items-center justify-between text-lg">
+          <div className="flex items-center text-gray-900 font-semibold">
+            <Calendar className="h-5 w-5 mr-2 text-purple-600" />
+            <span>{format(new Date(event.date), 'MMM d, yyyy')}</span>
+          </div>
+          <div className="flex items-center text-gray-900 font-semibold">
+            <Users className="h-5 w-5 mr-2 text-purple-600" />
+            <span>{event.rsvpCount} attended</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Events = () => {
-  const { data: events, isLoading, error } = useEvents();
+  const { data: fetchedEvents, isLoading, error } = useEvents();
+
+  // Hardcoded fallback events (used when API is unavailable)
+  const hardcodedEvents = [
+    // No upcoming events for now; only past Tree Plantation event
+    {
+      _id: 'tree-2k25',
+      title: 'Tree Plantation 2K25',
+      description: "SAInT members organized a plantation drive at Udachiwadi to promote environmental awareness and community participation.",
+      images: [
+        '/images/Events/treeplantation1-2k25.jpg',
+        '/images/Events/treeplantation2-2k25.jpg',
+        '/images/Events/treeplantation3-2k25.jpg',
+        '/images/Events/treeplantation4-2k25.jpg',
+      ],
+      date: '2025-08-08',
+      time: '12:28 PM',
+      venue: 'Udachiwadi, Maharashtra, India',
+      status: 'completed',
+      rsvpCount: 120,
+    },
+    {
+      _id: 'kautuk-sohala-2026',
+      title: 'Kautuk Sohala 2026',
+      description: "Kautuk Sohala is an achievement event organized by SAInT where the accomplishments and innovations of IT students are highlighted and celebrated.",
+      images: [
+        '/images/Events/KautakSohla1-2k25.jpg',
+        '/images/Events/KautakSohla2-2k25.jpg',
+        '/images/Events/KautakSohla3-2k25.jpg',
+      ],
+      date: '2026-03-28',
+      time: '10:00 AM',
+      venue: 'MBA Seminar Hall, JSPM RSOCE',
+      status: 'completed',
+      rsvpCount: 100,
+    },
+    {
+      _id: 'teachers-day-2k25',
+      title: "Teacher's Day",
+      description: "SAInT organized Teacher's Day celebration at the IT department to honor and appreciate our dedicated faculty members.",
+      images: [
+        '/images/Events/teachersday1-2k25.jpg',
+        '/images/Events/teachersday2-2k25.jpg',
+        '/images/Events/teachersday3-2k25.jpg',
+        '/images/Events/teachersday4-2k25.jpg',
+        '/images/Events/teachersday5-2k25.jpg',
+      ],
+      date: '2025-09-06',
+      time: '02:00 PM',
+      venue: 'IT Department, JSPM RSOCE',
+      status: 'completed',
+      rsvpCount: 80,
+    },
+    {
+      _id: 'farewell-2k25',
+      title: 'Farewell 2K25',
+      description: 'SAInT organized a farewell event to celebrate the outgoing students and wish them success for the future.',
+      images: [
+        '/images/Events/Farewell1-2k25.jpg',
+        '/images/Events/Farewell2-2k25.jpg',
+        '/images/Events/Farewell3-2k25.jpg',
+        '/images/Events/Farewell4-2k25.jpg',
+        '/images/Events/Farewell5-2k25.jpg',
+      ],
+      date: '2025-04-09',
+      time: '10:00 AM',
+      venue: 'JSPM Auditoriam',
+      status: 'completed',
+      rsvpCount: "200+",
+    },
+    {
+      _id: 'modelx-2-2026',
+      title: 'ModelX 2.0',
+      description: 'ModelX 2.0 was a project competition conducted by SAInT, inspired by innovation and technology, where students showcased their ideas and creativity.',
+      images: [
+        '/images/Events/ModelX1.jpg',
+        '/images/Events/ModelX2.jpg',
+        '/images/Events/ModelX3.jpg',
+        '/images/Events/ModelX4.jpg',
+        '/images/Events/ModelX5.jpg',
+        '/images/Events/ModelX6.jpg',
+      ],
+      date: '2026-04-07',
+      time: '10:00 AM',
+      venue: 'JSPM RSCOE',
+      status: 'completed',
+      rsvpCount: 100,
+    }
+  ];
+
+  // Prefer fetched events when non-empty, otherwise fall back to hardcoded data
+  const events = Array.isArray(fetchedEvents) && fetchedEvents.length > 0 ? fetchedEvents : hardcodedEvents;
   const { user, isAuthenticated } = useCurrentUser();
   const rsvpMutation = useRsvpToEvent();
   const cancelRsvpMutation = useCancelRsvp();
@@ -238,130 +427,6 @@ const Events = () => {
         </div>
       </section>
 
-      {/* Featured Events */}
-      <section className="py-16 px-4 relative z-10">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-heading font-bold text-gray-900 mb-4">Featured Events</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Don't miss these highlight events designed to elevate your tech journey
-            </p>
-          </div>
-          
-          <div className="grid lg:grid-cols-2 gap-8 mb-12">
-            {upcomingEvents.length > 0 ? (
-              upcomingEvents.slice(0, 4).map((event, index) => {
-                const isFull = event.maxAttendees && event.rsvpCount >= event.maxAttendees;
-                const isFillingFast = event.maxAttendees && event.rsvpCount >= event.maxAttendees * 0.8;
-                
-                return (
-                  <FloatingElement key={event._id} delay={index * 200}>
-                    <Card className="overflow-hidden hover-shadow smooth-transition group bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-                      <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 relative overflow-hidden">
-                        {event.images && event.images.length > 0 && (
-                          <img 
-                            src={`http://localhost:5000${event.images.find(img => img.isPrimary)?.url || event.images[0].url}`} 
-                            alt={event.title}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        )}
-                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 smooth-transition"></div>
-                        <div className="absolute bottom-4 left-4 right-4">
-                          <Badge 
-                            variant={getStatusColor(event.status)}
-                            className="mb-2"
-                          >
-                            {getStatusText(event.status, event.rsvpCount, event.maxAttendees)}
-                          </Badge>
-                          <h3 className="text-2xl font-bold text-white mb-2">{event.title}</h3>
-                        </div>
-                      </div>
-                      
-                      <CardContent className="p-6">
-                        <p className="text-gray-700 mb-4">{event.description}</p>
-                        
-                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
-                          <div className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-2 text-blue-500" />
-                            {format(new Date(event.date), 'MMM d')}
-                          </div>
-                          <div className="flex items-center">
-                            <Clock className="h-4 w-4 mr-2 text-blue-500" />
-                            {event.time}
-                          </div>
-                          <div className="flex items-center">
-                            <MapPin className="h-4 w-4 mr-2 text-blue-500" />
-                            {event.venue}
-                          </div>
-                          <div className="flex items-center">
-                            <Users className="h-4 w-4 mr-2 text-blue-500" />
-                            {event.maxAttendees 
-                              ? `${event.rsvpCount}/${event.maxAttendees}`
-                              : `${event.rsvpCount} registered`
-                            }
-                          </div>
-                        </div>
-
-                        <div className="space-y-2 mb-4">
-                          {event.speaker?.name && (
-                            <div className="flex items-center text-sm text-gray-700">
-                              <span className="font-semibold text-blue-600 mr-2">Speaker:</span>
-                              <span className="font-medium">{event.speaker.name}</span>
-                              {event.speaker.designation && (
-                                <span className="text-gray-500 ml-2">• {event.speaker.designation}</span>
-                              )}
-                            </div>
-                          )}
-                          <div className="flex flex-wrap gap-2">
-                            <Badge variant="outline" className="text-xs bg-gray-50">
-                              {event.category}
-                            </Badge>
-                          </div>
-                        </div>
-
-                        {event.registrationRequired ? (
-                          <Button 
-                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-xl font-semibold group"
-                            disabled={isFull || event.status === 'cancelled' || rsvpMutation.isPending || cancelRsvpMutation.isPending}
-                            onClick={() => handleRsvp(event._id)}
-                          >
-                            {isFull ? 'Registration Full' : 
-                             event.status === 'cancelled' ? 'Cancelled' :
-                             rsvpStates[event._id] ? 'Cancel RSVP' : 'RSVP Now'}
-                            {(rsvpMutation.isPending || cancelRsvpMutation.isPending) ? (
-                              <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 smooth-transition" />
-                            )}
-                          </Button>
-                        ) : (
-                          <Button 
-                            className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 rounded-xl font-semibold group"
-                            disabled={event.status === 'cancelled'}
-                          >
-                            {event.status === 'cancelled' ? 'Cancelled' : 'Learn More'}
-                            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 smooth-transition" />
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </FloatingElement>
-                );
-              })
-            ) : (
-              <div className="col-span-2 text-center py-12">
-                <CalendarDays className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">No upcoming events scheduled.</p>
-                <p className="text-gray-500 text-sm">Check back soon for exciting new events!</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
       {/* Past Events */}
       <section className="py-16 px-4 bg-white relative z-10">
         <div className="container mx-auto max-w-6xl">
@@ -376,27 +441,7 @@ const Events = () => {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {pastEvents.length > 0 ? (
-              pastEvents.slice(0, 6).map((event) => (
-                <div key={event._id} className="bg-white border-2 border-purple-300 rounded-xl shadow-xl hover:shadow-2xl hover:border-purple-400 transition-all duration-300 overflow-hidden">
-                  <div className="p-6">
-                    <Badge className="mb-3 bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border border-purple-300">
-                      Completed
-                    </Badge>
-                    <h3 className="text-2xl text-gray-900 font-bold mb-4 font-heading">{event.title}</h3>
-                    <p className="text-gray-800 mb-6 font-medium text-lg leading-relaxed">{event.description}</p>
-                    <div className="flex items-center justify-between text-lg">
-                      <div className="flex items-center text-gray-900 font-semibold">
-                        <Calendar className="h-5 w-5 mr-2 text-purple-600" />
-                        <span>{format(new Date(event.date), 'MMM d, yyyy')}</span>
-                      </div>
-                      <div className="flex items-center text-gray-900 font-semibold">
-                        <Users className="h-5 w-5 mr-2 text-purple-600" />
-                        <span>{event.rsvpCount} attended</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
+              pastEvents.slice(0, 6).map((event) => <EventCard key={event._id} event={event} />)
             ) : (
               <div className="col-span-3 text-center py-12">
                 <CalendarDays className="h-16 w-16 text-gray-400 mx-auto mb-4" />
