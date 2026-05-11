@@ -1,14 +1,22 @@
-import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { Card, CardContent } from "@/components/ui/card";
+import InteractiveBackground from "@/components/InteractiveBackground";
+import { CustomArrow, FloatingElement } from "@/components/InteractiveElements";
+import Navigation from "@/components/Navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, Award, X, ChevronLeft, ChevronRight, Filter, Search, ArrowRight, ExternalLink, Loader2, Image, Eye, Heart, MessageCircle, Share2 } from "lucide-react";
-import { FloatingElement, CustomArrow } from "@/components/InteractiveElements";
-import InteractiveBackground from "@/components/InteractiveBackground";
-import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { useGallery } from "@/hooks/useGallery";
 import { format } from "date-fns";
+import { ArrowRight, Award, Calendar, ChevronLeft, ChevronRight, ExternalLink, Eye, Filter, Heart, Image, Loader2, Users, X } from "lucide-react";
+import { useState } from "react";
+
+const resolveGalleryImageUrl = (imageUrl: string) => {
+  if (imageUrl.startsWith('http') || imageUrl.startsWith('data:') || imageUrl.startsWith('blob:') || imageUrl.startsWith('/images/')) {
+    return imageUrl;
+  }
+
+  return `http://localhost:5000${imageUrl}`;
+};
 
 const Gallery = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -258,7 +266,7 @@ const Gallery = () => {
                       return imageUrl ? (
                         <div className="relative w-full h-full">
                           <img 
-                            src={imageUrl.startsWith('http') ? imageUrl : `http://localhost:5000${imageUrl}`}
+                            src={resolveGalleryImageUrl(imageUrl)}
                             alt={item.title}
                             className="w-full h-full object-cover group-hover:scale-105 smooth-transition"
                             onError={(e) => {
@@ -402,7 +410,7 @@ const Gallery = () => {
                       return imageUrl ? (
                         <div className="relative w-full h-full">
                           <img 
-                            src={imageUrl.startsWith('http') ? imageUrl : `http://localhost:5000${imageUrl}`}
+                            src={resolveGalleryImageUrl(imageUrl)}
                             alt={item.title}
                             className="w-full h-full object-cover"
                             onError={(e) => {
